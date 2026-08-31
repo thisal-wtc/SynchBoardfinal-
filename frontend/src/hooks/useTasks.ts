@@ -10,6 +10,7 @@ export type MoveResult =
 
 const API_URL = '/api/tasks';
 
+export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
