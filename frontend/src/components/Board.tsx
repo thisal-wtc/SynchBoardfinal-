@@ -61,15 +61,26 @@ export default function Board() {
       const dueTime = new Date(task.dueDate).getTime();
       const timeUntilDue = dueTime - now;
 
-      if (timeUntilDue > 0 && timeUntilDue <= fortyEightHours) {
+      // Notify if due within 48 hours OR overdue
+      if (timeUntilDue <= fortyEightHours) {
         if (!notifiedTasks.current.has(task.id)) {
           notifiedTasks.current.add(task.id);
-          toast(`Task "${task.title}" is due soon!`, {
-            icon: '⚠️',
-            style: { border: '1px solid #f59e0b', padding: '16px', color: '#92400e' },
-            duration: 5000,
-          });
-          addActivity(`Deadline warning for "${task.title}"`);
+          const isOverdue = timeUntilDue < 0;
+          toast(
+            isOverdue 
+              ? `Task "${task.title}" is OVERDUE!` 
+              : `Task "${task.title}" is due soon!`, 
+            {
+              icon: isOverdue ? '🚨' : '⚠️',
+              style: { 
+                border: `1px solid ${isOverdue ? '#dc2626' : '#f59e0b'}`, 
+                padding: '16px', 
+                color: isOverdue ? '#991b1b' : '#92400e' 
+              },
+              duration: 6000,
+            }
+          );
+          addActivity(isOverdue ? `Overdue alert for "${task.title}"` : `Deadline warning for "${task.title}"`);
         }
       }
     });
