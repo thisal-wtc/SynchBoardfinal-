@@ -8,11 +8,11 @@ export type MoveResult =
   | { ok: true }
   | { ok: false; reason: 'skip-column' | 'terminal' | 'not-found' };
 
-const API_URL = 'http://localhost:5000/api/tasks';
+const API_URL = '/api/tasks';
 
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
@@ -22,6 +22,10 @@ export function useTasks() {
         const res = await fetch(API_URL, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        if (res.status === 401 || res.status === 403) {
+          logout();
+          throw new Error('Session expired');
+        }
         if (!res.ok) throw new Error('Failed to fetch tasks');
         const data = await res.json();
         // Map _id to id for frontend compatibility
@@ -40,7 +44,7 @@ export function useTasks() {
   }, [isAuthenticated, token]);
 
   const addTask = useCallback(
-    async (title: string, description: string, color: NoteColor) => {
+    async (title: string, description: string, color: NoteColor, dueDate?: string | null) => {
       if (!token) return;
       try {
         const res = await fetch(API_URL, {
@@ -49,8 +53,12 @@ export function useTasks() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ title, description, color, status: 'todo' }),
+          body: JSON.stringify({ title, description, color, status: 'todo', dueDate }),
         });
+        if (res.status === 401 || res.status === 403) {
+          logout();
+          throw new Error('Session expired');
+        }
         if (!res.ok) throw new Error('Failed to create task');
         const data = await res.json();
         const newTask = { ...data, id: data._id };
@@ -64,7 +72,7 @@ export function useTasks() {
   );
 
   const updateTask = useCallback(
-    async (id: string, updates: { title: string; description: string; color: NoteColor }) => {
+    async (id: string, updates: { title: string; description: string; color: NoteColor; dueDate?: string | null }) => {
       if (!token) return false;
       
       // Optimistic update
@@ -79,6 +87,7 @@ export function useTasks() {
             title: updates.title.trim(),
             description: updates.description.trim(),
             color: updates.color,
+            dueDate: updates.dueDate,
             updatedAt: Date.now(),
           };
         })
@@ -96,6 +105,10 @@ export function useTasks() {
           },
           body: JSON.stringify(updates),
         });
+        if (res.status === 401 || res.status === 403) {
+          logout();
+          throw new Error('Session expired');
+        }
         if (!res.ok) throw new Error('Failed to update task');
         return true;
       } catch (error) {
@@ -129,6 +142,10 @@ export function useTasks() {
             Authorization: `Bearer ${token}`,
           },
         });
+        if (res.status === 401 || res.status === 403) {
+          logout();
+          throw new Error('Session expired');
+        }
         if (!res.ok) throw new Error('Failed to delete task');
         return true;
       } catch (error) {
@@ -171,6 +188,10 @@ export function useTasks() {
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({ status: to }),
+          }).then(res => {
+            if (res.status === 401 || res.status === 403) {
+              logout();
+            }
           }).catch(() => {
             toast.error('Failed to sync move to server');
             // Revert state if necessary, but skipping for simplicity in this prototype

@@ -13,6 +13,10 @@ const taskSchema = new mongoose.Schema({
     type: String,
     default: 'yellow',
   },
+  dueDate: {
+    type: Date,
+    default: null,
+  },
   status: {
     type: String,
     enum: ['todo', 'in-progress', 'done'],

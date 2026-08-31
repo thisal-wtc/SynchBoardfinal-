@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Calendar } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { NoteColor, Task } from '../types';
 import { NOTE_COLORS } from '../types';
@@ -9,19 +9,18 @@ interface TaskModalProps {
   mode: 'add' | 'edit';
   initial?: Task | null;
   onClose: () => void;
-  onSubmit: (title: string, description: string, color: NoteColor) => void;
+  onSubmit: (title: string, description: string, color: NoteColor, dueDate?: string | null) => Promise<void> | void;
 }
 
 export default function TaskModal({ open, mode, initial, onClose, onSubmit }: TaskModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState<NoteColor>('yellow');
+  const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
-  // Reset the form fields when the modal transitions from closed to open.
-  // Done during render (not in an effect) so it doesn't trigger a second,
-  // cascading render pass — see react-hooks/set-state-in-effect.
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
@@ -29,11 +28,12 @@ export default function TaskModal({ open, mode, initial, onClose, onSubmit }: Ta
       setTitle(initial?.title ?? '');
       setDescription(initial?.description ?? '');
       setColor(initial?.color ?? 'yellow');
+      setDueDate(initial?.dueDate ? new Date(initial.dueDate).toISOString().split('T')[0] : '');
       setError('');
+      setIsSubmitting(false);
     }
   }
 
-  // Pure side effect (DOM focus), no setState here, so it stays an effect.
   useEffect(() => {
     if (!open) return;
     const t = setTimeout(() => titleRef.current?.focus(), 60);
@@ -49,13 +49,21 @@ export default function TaskModal({ open, mode, initial, onClose, onSubmit }: Ta
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isSubmitting) return;
+    
     if (!title.trim()) {
       setError('Give the task a title before pinning it up.');
       return;
     }
-    onSubmit(title, description, color);
+    
+    setIsSubmitting(true);
+    try {
+      await onSubmit(title, description, color, dueDate || null);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -97,6 +105,7 @@ export default function TaskModal({ open, mode, initial, onClose, onSubmit }: Ta
                 setTitle(e.target.value);
                 if (error) setError('');
               }}
+              disabled={isSubmitting}
             />
 
             <label className="field-label" htmlFor="task-desc">
@@ -110,6 +119,19 @@ export default function TaskModal({ open, mode, initial, onClose, onSubmit }: Ta
               rows={3}
               placeholder="Any notes for the team..."
               onChange={(e) => setDescription(e.target.value)}
+              disabled={isSubmitting}
+            />
+            
+            <label className="field-label" htmlFor="task-due-date" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Calendar size={14} /> Due Date <span className="field-optional">(optional)</span>
+            </label>
+            <input
+              id="task-due-date"
+              type="date"
+              className="field-input"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              disabled={isSubmitting}
             />
 
             <span className="field-label">Note color</span>
@@ -123,6 +145,7 @@ export default function TaskModal({ open, mode, initial, onClose, onSubmit }: Ta
                   aria-label={c.label}
                   title={c.label}
                   onClick={() => setColor(c.id)}
+                  disabled={isSubmitting}
                 >
                   {color === c.id && <span className="swatch-pin" />}
                 </button>
@@ -132,11 +155,11 @@ export default function TaskModal({ open, mode, initial, onClose, onSubmit }: Ta
             {error && <p className="field-error">{error}</p>}
 
             <div className="modal-actions">
-              <button type="button" className="btn btn-ghost" onClick={onClose}>
+              <button type="button" className="btn btn-ghost" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary">
-                {mode === 'add' ? 'Pin it up' : 'Save changes'}
+              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : (mode === 'add' ? 'Pin it up' : 'Save changes')}
               </button>
             </div>
           </motion.form>

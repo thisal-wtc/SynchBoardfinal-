@@ -13,7 +13,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pin as PinIcon, Plus, AlertCircle, MapPin, Edit2, Trash2, LogOut, Search, Bell } from 'lucide-react';
 import { useMemo, useState, useRef, useEffect } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { useTasks } from '../hooks/useTasks';
 import { useAuth } from '../context/AuthContext';
 import type { NoteColor, Task, TaskStatus } from '../types';
@@ -140,13 +140,13 @@ export default function Board() {
     setModalOpen(true);
   }
 
-  function handleModalSubmit(title: string, description: string, color: NoteColor) {
+  async function handleModalSubmit(title: string, description: string, color: NoteColor, dueDate?: string | null) {
     if (modalMode === 'add') {
-      addTask(title, description, color);
+      await addTask(title, description, color, dueDate);
       toast.success('Task pinned to the board', { icon: <PinIcon size={18} color="#3B82F6" /> });
       addActivity(`Created task "${title}"`);
     } else if (editingTask) {
-      updateTask(editingTask.id, { title, description, color });
+      await updateTask(editingTask.id, { title, description, color, dueDate });
       toast.success('Task updated', { icon: <Edit2 size={18} color="#F59E0B" /> });
       addActivity(`Updated task "${title}"`);
     }
@@ -181,8 +181,6 @@ export default function Board() {
 
   return (
     <div className="board-page">
-      <Toaster position="bottom-center" toastOptions={{ className: 'app-toast', duration: 2400 }} />
-
       <header className="board-header">
         <div className="board-brand">
           <span className="brand-pin">

@@ -1,5 +1,18 @@
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Clock } from 'lucide-react';
 import type { Task } from '../types';
+
+function getDueDateStyle(dateString: string): React.CSSProperties {
+  const due = new Date(dateString);
+  const now = new Date();
+  const diffDays = (due.getTime() - now.getTime()) / (1000 * 3600 * 24);
+  
+  if (diffDays < 0) {
+    return { color: '#E63946', fontWeight: 700 }; // Overdue
+  } else if (diffDays <= 2) {
+    return { color: '#F59E0B', fontWeight: 600 }; // Due soon (2 days)
+  }
+  return { color: 'rgba(0,0,0,0.45)' };
+}
 
 interface NoteContentProps {
   task: Task;
@@ -62,6 +75,13 @@ export default function NoteContent({
       <div className="note-body">
         <h4 className="note-title">{task.title}</h4>
         {task.description && <p className="note-desc">{task.description}</p>}
+        
+        {task.dueDate && (
+          <div className="note-due" style={getDueDateStyle(task.dueDate)}>
+            <Clock size={12} strokeWidth={2.4} />
+            <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+          </div>
+        )}
       </div>
 
       <div className="note-curl" aria-hidden="true" />

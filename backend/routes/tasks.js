@@ -17,13 +17,14 @@ router.get('/', verifyToken, async (req, res) => {
 // CREATE a new task
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { title, description, color, status } = req.body;
+    const { title, description, color, status, dueDate } = req.body;
     
     const newTask = new Task({
       title,
       description,
       color,
       status: status || 'todo',
+      dueDate: dueDate || null,
       user: req.user._id
     });
 
@@ -37,7 +38,7 @@ router.post('/', verifyToken, async (req, res) => {
 // UPDATE a task
 router.put('/:id', verifyToken, async (req, res) => {
   try {
-    const { title, description, color, status } = req.body;
+    const { title, description, color, status, dueDate } = req.body;
     
     // Check if task exists and belongs to user
     const task = await Task.findOne({ _id: req.params.id, user: req.user._id });
@@ -50,6 +51,7 @@ router.put('/:id', verifyToken, async (req, res) => {
     if (description !== undefined) task.description = description;
     if (color) task.color = color;
     if (status) task.status = status;
+    if (dueDate !== undefined) task.dueDate = dueDate ? new Date(dueDate) : null;
 
     const updatedTask = await task.save();
     res.json(updatedTask);

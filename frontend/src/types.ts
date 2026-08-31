@@ -8,6 +8,7 @@ export interface Task {
   description: string;
   color: NoteColor;
   status: TaskStatus;
+  dueDate?: string | null;
   createdAt: number;
   updatedAt: number;
 }

@@ -12,7 +12,6 @@ function clamp(n: number, min: number, max: number) {
   return Math.min(max, Math.max(min, n));
 }
 
-// Pro-level: Map note colors to beautiful glowing shadow colors
 const shadowGlows: Record<string, string> = {
   yellow: 'rgba(250, 204, 21, 0.35)',
   blue: 'rgba(96, 165, 250, 0.35)',
@@ -26,7 +25,6 @@ export default function DragGhost({ task, tiltDelta }: DragGhostProps) {
   const baseTilt = getNoteTilt(task.id);
   const pinRotate = getPinRotate(task.id);
   
-  // Tighter, highly responsive tilt physics
   const tiltX = clamp(tiltDelta / 4, -22, 22);
   const tiltY = clamp(tiltDelta / 10, -10, 10);
   
@@ -36,8 +34,8 @@ export default function DragGhost({ task, tiltDelta }: DragGhostProps) {
     <motion.div
       initial={{ scale: 1, y: 0 }}
       animate={{ 
-        scale: [1.15, 1.18, 1.15], // Add a breathing pulse effect
-        y: -22, // Slightly higher lift for more depth
+        scale: [1.15, 1.18, 1.15],
+        y: -22,
         rotate: baseTilt + tiltX,
         rotateY: tiltY,
       }}
@@ -54,17 +52,15 @@ export default function DragGhost({ task, tiltDelta }: DragGhostProps) {
       }}
       className={`sticky-note note-${task.color} is-dragging drag-ghost`}
       style={{
-        // Triple shadow: ambient, colored radial glow, and an intense drop shadow
         boxShadow: `0 40px 75px -15px rgba(0, 0, 0, 0.55), 0 25px 45px -10px ${glowColor}, 0 10px 20px -5px ${glowColor.replace('0.35', '0.6')}`,
         opacity: 0.98,
         filter: 'brightness(1.2) contrast(1.1) saturate(1.15)',
         cursor: 'grabbing',
         zIndex: 9999,
         transformOrigin: 'center center',
-        willChange: 'transform, filter', // GPU Acceleration
+        willChange: 'transform, filter',
       }}
     >
-      {/* Subtle glass glare overlay for 3D realism */}
       <div 
         style={{
           position: 'absolute',
