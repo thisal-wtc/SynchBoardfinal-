@@ -48,6 +48,32 @@ export default function Board() {
   const [hasUnread, setHasUnread] = useState(false);
   
   const notifRef = useRef<HTMLDivElement>(null);
+  const notifiedTasks = useRef<Set<string>>(new Set());
+
+  // Deadline notifications
+  useEffect(() => {
+    const now = new Date().getTime();
+    const fortyEightHours = 48 * 60 * 60 * 1000;
+
+    tasks.forEach(task => {
+      if (task.status === 'done' || !task.dueDate) return;
+      
+      const dueTime = new Date(task.dueDate).getTime();
+      const timeUntilDue = dueTime - now;
+
+      if (timeUntilDue > 0 && timeUntilDue <= fortyEightHours) {
+        if (!notifiedTasks.current.has(task.id)) {
+          notifiedTasks.current.add(task.id);
+          toast(`Task "${task.title}" is due soon!`, {
+            icon: '⚠️',
+            style: { border: '1px solid #f59e0b', padding: '16px', color: '#92400e' },
+            duration: 5000,
+          });
+          addActivity(`Deadline warning for "${task.title}"`);
+        }
+      }
+    });
+  }, [tasks]);
 
   // Close notifications on click outside
   useEffect(() => {

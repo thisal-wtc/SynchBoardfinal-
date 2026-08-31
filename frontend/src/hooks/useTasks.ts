@@ -10,8 +10,22 @@ export type MoveResult =
 
 const API_URL = '/api/tasks';
 
-export function useTasks() {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem('synchboard_tasks');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Sync tasks to localStorage for offline persistence
+  useEffect(() => {
+    if (tasks.length > 0) {
+      localStorage.setItem('synchboard_tasks', JSON.stringify(tasks));
+    }
+  }, [tasks]);
   const { token, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
@@ -41,7 +55,7 @@ export function useTasks() {
     };
 
     fetchTasks();
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token, logout]);
 
   const addTask = useCallback(
     async (title: string, description: string, color: NoteColor, dueDate?: string | null) => {

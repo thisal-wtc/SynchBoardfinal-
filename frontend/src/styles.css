@@ -623,9 +623,10 @@
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    gap: 16px;
+    gap: 12px;
     padding-bottom: 20px;
     -webkit-overflow-scrolling: touch;
+    scroll-padding: 0 5vw;
   }
 
   .board-columns::-webkit-scrollbar {
@@ -638,8 +639,8 @@
   }
   
   .column {
-    min-width: 88vw;
-    scroll-snap-align: start;
+    min-width: 85vw;
+    scroll-snap-align: center;
     flex-shrink: 0;
   }
 
@@ -794,6 +795,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .search-bar {
