@@ -101,19 +101,23 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB successfully!');
-    // Only start the server locally, Vercel handles the export automatically
-    if (process.env.NODE_ENV !== 'production') {
-      const PORT = process.env.PORT || 5000;
-      httpServer.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
-      });
-    }
-  })
-  .catch((err) => {
-    console.error('Failed to connect to MongoDB:', err);
-  });
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => {
+      console.log('Connected to MongoDB successfully!');
+      // Only start the server locally, Vercel handles the export automatically
+      if (process.env.NODE_ENV !== 'production') {
+        const PORT = process.env.PORT || 5000;
+        httpServer.listen(PORT, () => {
+          console.log(`Server is running on port ${PORT}`);
+        });
+      }
+    })
+    .catch((err) => {
+      console.error('Failed to connect to MongoDB:', err);
+    });
+} else {
+  console.error('CRITICAL ERROR: MONGODB_URI is not defined! Please add it to Vercel Environment Variables.');
+}
 
 export default app;

@@ -22,13 +22,18 @@ const Register: React.FC = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        throw new Error('Server returned an invalid response. Ensure Environment Variables (MONGODB_URI) are set in Vercel.');
+      }
 
       if (!response.ok) {
         throw new Error(data.message || 'Registration failed');
       }
 
-      toast.success('Registration successful! Please log in.');
+      toast.success('Registration successful! Please login.');
       navigate('/login');
     } catch (error: any) {
       toast.error(error.message);
