@@ -50,15 +50,20 @@ const Dashboard: React.FC = () => {
         },
         body: JSON.stringify({ name: newRoomName, description: newRoomDesc })
       });
+
+      const data = await response.json();
+
       if (response.ok) {
         toast.success('Room created!');
         setIsCreatingRoom(false);
         setNewRoomName('');
         setNewRoomDesc('');
         fetchRooms();
+      } else {
+        toast.error(data.message || 'Failed to create room');
       }
     } catch (error) {
-      toast.error('Failed to create room');
+      toast.error('Failed to create room — network error');
     }
   };
 
