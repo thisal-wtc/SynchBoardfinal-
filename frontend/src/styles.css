@@ -135,6 +135,10 @@
   padding: 22px 22px 30px;
 }
 
+[data-theme="dark"] .board-frame {
+  box-shadow: 0 22px 45px rgba(0, 0, 0, 0.3), inset 0 0 0 2px rgba(255, 255, 255, 0.05);
+}
+
 .board-frame::before,
 .board-frame::after {
   content: '';
@@ -257,10 +261,10 @@
 .empty-state {
   margin-top: 40px;
   font-family: var(--font-display);
-  color: rgba(35, 42, 54, 0.32);
+  color: var(--ink-soft);
   font-size: 16px;
   text-align: center;
-  border: 2px dashed rgba(35, 42, 54, 0.14);
+  border: 2px dashed rgba(128, 128, 128, 0.2);
   border-radius: 12px;
   padding: 22px 16px;
   width: 100%;
@@ -594,6 +598,11 @@
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 }
 
+[data-theme="dark"] .confirm-card {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .confirm-card h3 {
   font-family: var(--font-display);
   font-size: 20px;
@@ -833,7 +842,7 @@
 }
 
 .search-bar:focus-within {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface);
   border-color: var(--pin-red);
   box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
 }
@@ -868,7 +877,7 @@
 }
 
 .notification-bell:hover {
-  background: rgba(35, 42, 54, 0.05);
+  background: rgba(128, 128, 128, 0.1);
   color: var(--ink);
 }
 
@@ -898,6 +907,12 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+[data-theme="dark"] .notification-dropdown {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 .notification-header {

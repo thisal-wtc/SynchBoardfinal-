@@ -11,6 +11,9 @@
   --ink-soft: #5b6472;
   --panel: rgba(255, 255, 255, 0.55);
   --panel-border: rgba(35, 42, 54, 0.08);
+  --surface: rgba(255, 255, 255, 0.85);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
   --board-frame-bg: linear-gradient(180deg, #ffffff, #f6f7f9);
 
   /* Brand accent — the pushpin red, reused for primary actions */
@@ -44,6 +47,9 @@
   --ink-soft: #cbd5e1; /* slate-300 */
   --panel: rgba(15, 23, 42, 0.75); /* slate-900 with opacity */
   --panel-border: rgba(255, 255, 255, 0.1);
+  --surface: rgba(30, 41, 59, 0.9);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.35);
   --board-frame-bg: linear-gradient(180deg, #1e293b, #0f172a);
 
   /* Note shadows need to be slightly darker in dark mode for contrast */
@@ -72,8 +78,8 @@ body {
   background: var(--board-bg);
   min-height: 100svh;
   background-image:
-    linear-gradient(rgba(35, 42, 54, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(35, 42, 54, 0.05) 1px, transparent 1px);
+    linear-gradient(rgba(128, 128, 128, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(128, 128, 128, 0.06) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 
