@@ -11,7 +11,7 @@ import {
   type DropAnimation,
 } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, AlertCircle, MapPin, Edit2, Trash2, LogOut, Search, Bell, ArrowLeft } from 'lucide-react';
+import { Plus, AlertCircle, MapPin, Edit2, Trash2, Search, Bell, ArrowLeft } from 'lucide-react';
 import { Moon, Sun, MessageSquare, Calendar as CalendarIcon, Phone } from 'lucide-react';
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -21,7 +21,6 @@ import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import type { NoteColor, Task, TaskStatus } from '../types';
-import { COLUMNS } from '../types';
 import Column from './Column';
 import ConfirmDialog from './ConfirmDialog';
 import DragGhost from './DragGhost';
