@@ -18,6 +18,18 @@ const roomSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     role: { type: String, enum: ['owner', 'editor', 'viewer'], default: 'editor' }
   }],
+  columns: {
+    type: [{
+      id: String,
+      title: String,
+      order: Number
+    }],
+    default: [
+      { id: 'todo', title: 'To Do', order: 0 },
+      { id: 'in-progress', title: 'In Progress', order: 1 },
+      { id: 'done', title: 'Done', order: 2 }
+    ]
+  },
 }, { timestamps: true });
 
 export default mongoose.model('Room', roomSchema);

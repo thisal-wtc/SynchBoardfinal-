@@ -60,6 +60,37 @@ router.get('/:id', verifyToken, async (req, res) => {
   }
 });
 
+// Update room columns
+router.put('/:id/columns', verifyToken, async (req, res) => {
+  try {
+    const { columns } = req.body;
+    const room = await Room.findById(req.params.id);
+    if (!room) return res.status(404).json({ message: "Room not found" });
+    
+    // Check if user is a member
+    const myMembership = room.members.find(m => {
+      if (m.user) return m.user.toString() === req.user._id;
+      return m._id ? m._id.toString() === req.user._id : m.toString() === req.user._id;
+    });
+    
+    if (!myMembership) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    
+    // Only owner or editor can update columns
+    if (myMembership.role === 'viewer') {
+      return res.status(403).json({ message: "Viewers cannot update columns" });
+    }
+
+    room.columns = columns;
+    await room.save();
+
+    res.json({ message: "Columns updated successfully", columns: room.columns });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Invite friend to room
 router.post('/:id/invite', verifyToken, async (req, res) => {
   try {

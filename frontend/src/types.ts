@@ -1,4 +1,4 @@
-export type TaskStatus = 'todo' | 'in-progress' | 'done';
+export type TaskStatus = string;
 
 export type NoteColor = 'yellow' | 'pink' | 'sky' | 'mint' | 'lilac';
 
@@ -21,9 +21,10 @@ export interface Task {
 }
 
 export interface ColumnConfig {
-  id: TaskStatus;
+  id: string;
   title: string;
-  hint: string;
+  order: number;
+  hint?: string;
 }
 
 export const NOTE_COLORS: { id: NoteColor; label: string; hex: string }[] = [
@@ -34,30 +35,21 @@ export const NOTE_COLORS: { id: NoteColor; label: string; hex: string }[] = [
   { id: 'lilac', label: 'Lilac', hex: '#C9B6E4' },
 ];
 
-export const COLUMNS: ColumnConfig[] = [
-  { id: 'todo', title: 'To Do', hint: 'Write it down, pin it up' },
-  { id: 'in-progress', title: 'In Progress', hint: 'Being worked on' },
-  { id: 'done', title: 'Done', hint: 'Shipped it' },
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { id: 'todo', title: 'To Do', order: 0, hint: 'Write it down, pin it up' },
+  { id: 'in-progress', title: 'In Progress', order: 1, hint: 'Being worked on' },
+  { id: 'done', title: 'Done', order: 2, hint: 'Shipped it' },
 ];
 
-/**
- * Allowed transitions:
- *   todo <-> in-progress <-> done   (adjacent columns only, either direction)
- * except that once a card is "done" it's terminal — it can't move back to
- * In Progress or To Do. A card also can never jump straight between
- * To Do and Done; it must pass through In Progress.
- */
 export function isAdjacentMove(from: TaskStatus, to: TaskStatus): boolean {
   if (from === to) return true;
-  if (from === 'done') return false; // done is terminal, no moves out of it
-  const order: TaskStatus[] = ['todo', 'in-progress', 'done'];
-  return Math.abs(order.indexOf(from) - order.indexOf(to)) === 1;
+  return true; // Allow free dragging across custom columns
 }
 
 export function canEdit(status: TaskStatus): boolean {
-  return status === 'todo';
+  return true; // Any task can be edited now
 }
 
 export function canDelete(status: TaskStatus): boolean {
-  return status === 'todo' || status === 'done';
+  return true; // Any task can be deleted now
 }

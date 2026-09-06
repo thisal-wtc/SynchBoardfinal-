@@ -67,8 +67,9 @@ export default function Board() {
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [isCalendarView, setIsCalendarView] = useState(false);
   const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer'>('editor'); // default editor for personal
+  const [columns, setColumns] = useState<any[]>([]);
 
-  // Fetch Room Role
+  // Fetch Room Role & Columns
   useEffect(() => {
     if (actualRoomId && token) {
       fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${actualRoomId}`, {
@@ -78,21 +79,37 @@ export default function Board() {
       .then(data => {
         if (data.members) {
           const myMembership = data.members.find((m: any) => {
-            // Handle new schema (object with user) or old schema (string/ObjectId)
             if (m.user && m.user._id) return m.user._id === user?.id;
             return m === user?.id || (m._id && m._id === user?.id);
           });
           if (myMembership && myMembership.role) {
             setUserRole(myMembership.role);
           } else {
-            // Fallback for old rooms
             setUserRole('editor');
           }
         }
+        if (data.columns && data.columns.length > 0) {
+          setColumns(data.columns.sort((a: any, b: any) => a.order - b.order));
+        } else {
+          import('../types').then(t => setColumns(t.DEFAULT_COLUMNS));
+        }
       })
       .catch(err => console.error(err));
-    } else {
+    } else if (token) {
       setUserRole('editor');
+      // Fetch personal columns
+      fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.personalColumns && data.personalColumns.length > 0) {
+          setColumns(data.personalColumns.sort((a: any, b: any) => a.order - b.order));
+        } else {
+          import('../types').then(t => setColumns(t.DEFAULT_COLUMNS));
+        }
+      })
+      .catch(err => console.error(err));
     }
   }, [actualRoomId, token, user]);
 
@@ -239,7 +256,10 @@ export default function Board() {
   );
 
   const tasksByStatus = useMemo(() => {
-    const map: Record<TaskStatus, Task[]> = { todo: [], 'in-progress': [], done: [] };
+    const map: Record<string, Task[]> = {};
+    columns.forEach(col => {
+      map[col.id] = [];
+    });
     const lowerQuery = searchQuery.toLowerCase();
     
     for (const t of tasks) {
@@ -248,11 +268,14 @@ export default function Board() {
         t.title.toLowerCase().includes(lowerQuery) || 
         t.description.toLowerCase().includes(lowerQuery)
       ) {
+        if (!map[t.status]) {
+          map[t.status] = []; // Fallback for tasks with deleted columns
+        }
         map[t.status].push(t);
       }
     }
     return map;
-  }, [tasks, searchQuery]);
+  }, [tasks, searchQuery, columns]);
 
   function handleDragStart(event: DragStartEvent) {
     if (userRole === 'viewer') return;
@@ -293,7 +316,7 @@ export default function Board() {
       return;
     }
 
-    const label = COLUMNS.find((c) => c.id === target)?.title;
+    const label = columns.find((c) => c.id === target)?.title || target;
     toast.success(`Moved to ${label}`, { icon: <MapPin size={18} color="#10B981" /> });
     addActivity(`Moved "${task.title}" to ${label}`);
     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
@@ -499,17 +522,86 @@ export default function Board() {
               onDragEnd={handleDragEnd}
             >
               <div className="board-columns">
-                {COLUMNS.map((col) => (
+                {columns.map((col) => (
                   <div key={col.id} className={shakeColumn === col.id ? 'shake-wrap' : ''}>
                     <Column
                       config={col}
-                      tasks={tasksByStatus[col.id]}
+                      tasks={tasksByStatus[col.id] || []}
                       activeTask={activeTask}
                       onEdit={openEditModal}
                       onRequestDelete={setPendingDelete}
+                      onEditColumn={userRole !== 'viewer' ? (id, newTitle) => {
+                        const updatedColumns = columns.map(c => c.id === id ? { ...c, title: newTitle } : c);
+                        setColumns(updatedColumns);
+                        if (actualRoomId) {
+                          fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${actualRoomId}/columns`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                            body: JSON.stringify({ columns: updatedColumns })
+                          });
+                        } else {
+                          fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                            body: JSON.stringify({ personalColumns: updatedColumns })
+                          });
+                        }
+                      } : undefined}
+                      onDeleteColumn={userRole !== 'viewer' ? (id) => {
+                        const updatedColumns = columns.filter(c => c.id !== id);
+                        setColumns(updatedColumns);
+                        if (actualRoomId) {
+                          fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${actualRoomId}/columns`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                            body: JSON.stringify({ columns: updatedColumns })
+                          });
+                        } else {
+                          fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                            body: JSON.stringify({ personalColumns: updatedColumns })
+                          });
+                        }
+                      } : undefined}
                     />
                   </div>
                 ))}
+                
+                {/* Add Column Button */}
+                {userRole !== 'viewer' && (
+                  <div className="flex-shrink-0 w-80 pt-1">
+                    <button
+                      onClick={() => {
+                        const title = prompt('Enter column name:');
+                        if (title) {
+                          const newCol = { id: title.toLowerCase().replace(/\s+/g, '-'), title, order: columns.length };
+                          const updatedColumns = [...columns, newCol];
+                          setColumns(updatedColumns);
+                          
+                          // Save to backend
+                          if (actualRoomId) {
+                            fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${actualRoomId}/columns`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                              body: JSON.stringify({ columns: updatedColumns })
+                            });
+                          } else {
+                            fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                              body: JSON.stringify({ personalColumns: updatedColumns })
+                            });
+                          }
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-400 dark:hover:border-gray-600 transition-colors"
+                    >
+                      <Plus size={20} />
+                      <span className="font-medium">Add Column</span>
+                    </button>
+                  </div>
+                )}
               </div>
               <DragOverlay dropAnimation={dropAnimationConfig}>
                 {activeTask ? <DragGhost task={activeTask} tiltDelta={dragDeltaX} /> : null}

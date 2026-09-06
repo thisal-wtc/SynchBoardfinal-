@@ -40,7 +40,19 @@ const userSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     }
-  }]
+  }],
+  personalColumns: {
+    type: [{
+      id: String,
+      title: String,
+      order: Number
+    }],
+    default: [
+      { id: 'todo', title: 'To Do', order: 0 },
+      { id: 'in-progress', title: 'In Progress', order: 1 },
+      { id: 'done', title: 'Done', order: 2 }
+    ]
+  }
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);
