@@ -104,7 +104,9 @@ router.put('/:id', verifyToken, async (req, res) => {
     
     if (task.room) {
       const io = req.app.get('io');
-      if (io) io.to(task.room.toString()).emit('task-updated', updatedTask);
+      if (io) {
+        io.to(task.room.toString()).emit('task-updated', updatedTask);
+      }
     }
 
     res.json(updatedTask);
@@ -134,7 +136,9 @@ router.delete('/:id', verifyToken, async (req, res) => {
     
     if (task.room) {
       const io = req.app.get('io');
-      if (io) io.to(task.room.toString()).emit('task-deleted', task._id);
+      if (io) {
+        io.to(task.room.toString()).emit('task-deleted', task._id);
+      }
     }
 
     res.json({ message: 'Task deleted successfully' });
