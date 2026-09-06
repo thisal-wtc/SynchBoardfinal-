@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FriendsSidebar from './FriendsSidebar';
-import { Users, Plus, Settings as SettingsIcon, Layout, LogOut } from 'lucide-react';
+import { Users, Plus, Settings as SettingsIcon, Layout, LogOut, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Room {
@@ -13,7 +13,7 @@ interface Room {
 }
 
 const Dashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);

@@ -125,7 +125,7 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ roomId, onLeave }) => {
     return pc;
   };
 
-  const createOffer = async (socketId: string, remoteUser: any) => {
+  const createOffer = async (socketId: string, _remoteUser: any) => {
     const pc = createPeerConnection(socketId);
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);

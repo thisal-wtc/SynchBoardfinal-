@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Calendar, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { NoteColor, Task, Subtask } from '../types';
+import type { NoteColor, Task } from '../types';
 import { NOTE_COLORS } from '../types';
 
 interface TaskModalProps {

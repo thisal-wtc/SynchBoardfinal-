@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { User, Mail, Link, Save, ArrowLeft } from 'lucide-react';
 
 const Settings: React.FC = () => {
-  const { user, login } = useAuth(); // using login to update context user if needed, or we might need an update method
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState('');

@@ -17,7 +17,6 @@ interface Request {
 }
 
 const FriendsSidebar: React.FC = () => {
-  const { user } = useAuth();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
   const [searchQuery, setSearchQuery] = useState('');

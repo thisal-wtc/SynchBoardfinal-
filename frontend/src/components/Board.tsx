@@ -13,15 +13,15 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pin as PinIcon, Plus, AlertCircle, MapPin, Edit2, Trash2, LogOut, Search, Bell } from 'lucide-react';
 import { Moon, Sun, MessageSquare, Calendar as CalendarIcon, Phone } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useTasks } from '../hooks/useTasks';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import type { NoteColor, Task, TaskStatus } from '../types';
-import { canDelete, canEdit, COLUMNS } from '../types';
+import { COLUMNS } from '../types';
 import Column from './Column';
 import ConfirmDialog from './ConfirmDialog';
 import DragGhost from './DragGhost';
@@ -38,7 +38,6 @@ interface Activity {
 
 export default function Board() {
   const { id: roomId } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
   const isPersonal = !roomId || roomId === 'personal';
   const actualRoomId = isPersonal ? undefined : roomId;
 
