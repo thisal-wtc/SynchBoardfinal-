@@ -62,110 +62,109 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
+      <header className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between transition-colors duration-200">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
-          <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Settings</h1>
         </div>
       </header>
 
       <main className="flex-1 max-w-3xl w-full mx-auto p-6 md:p-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors duration-200">
           <div className="p-6 sm:p-8">
-            <h2 className="text-lg font-medium text-gray-900 mb-6">Profile Information</h2>
+            <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6">Profile Information</h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="flex items-center gap-6 mb-8">
-                <div className="w-24 h-24 rounded-full bg-indigo-100 overflow-hidden border border-gray-200 flex-shrink-0 flex items-center justify-center">
+                <div className="w-24 h-24 rounded-full bg-indigo-100 dark:bg-indigo-900/30 overflow-hidden border border-gray-200 dark:border-gray-700 flex-shrink-0 flex items-center justify-center">
                   {avatar ? (
                     <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
-                    <User className="w-10 h-10 text-indigo-400" />
+                    <User className="w-10 h-10 text-indigo-400 dark:text-indigo-500" />
                   )}
                 </div>
                 <div className="flex-1">
-                  <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Avatar URL
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Link className="h-4 w-4 text-gray-400" />
+                      <Link className="h-4 w-4 text-gray-400 dark:text-gray-500" />
                     </div>
                     <input
                       type="url"
                       id="avatar"
                       value={avatar}
                       onChange={(e) => setAvatar(e.target.value)}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="https://example.com/avatar.png"
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      placeholder="https://example.com/avatar.jpg"
                     />
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">Provide a direct link to an image.</p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Provide a direct link to an image.</p>
                 </div>
               </div>
 
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Display Name
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Full Name
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-4 w-4 text-gray-400" />
-                  </div>
+                <div className="mt-1">
                   <input
                     type="text"
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Your Name"
+                    className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 border"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Email Address
                 </label>
-                <div className="relative">
+                <div className="mt-1 relative rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-4 w-4 text-gray-400" />
+                    <Mail className="h-4 w-4 text-gray-400 dark:text-gray-500" />
                   </div>
                   <input
                     type="email"
                     id="email"
                     value={user?.email || ''}
                     disabled
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 sm:text-sm cursor-not-allowed"
+                    className="bg-gray-50 dark:bg-gray-800/50 block w-full pl-10 sm:text-sm border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 border text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Your email cannot be changed.</p>
+              </div>
+
+              <div>
+                <label htmlFor="bio" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Bio
+                </label>
+                <div className="mt-1">
+                  <textarea
+                    id="bio"
+                    rows={3}
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 bg-transparent text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 border"
+                    placeholder="Brief description for your profile"
                   />
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
-                  Bio
-                </label>
-                <textarea
-                  id="bio"
-                  rows={4}
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  className="block w-full p-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="A little bit about yourself..."
-                />
-              </div>
-
-              <div className="pt-4 flex justify-end">
+              <div className="pt-5 border-t border-gray-200 dark:border-gray-700 flex justify-end">
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 justify-center py-2.5 px-6 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 transition-colors"
                 >
                   {isLoading ? 'Saving...' : (
                     <>
