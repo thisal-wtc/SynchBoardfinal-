@@ -25,7 +25,7 @@ const FriendsSidebar: React.FC = () => {
 
   const fetchFriends = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/friends`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/friends`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (response.ok) {
@@ -49,7 +49,7 @@ const FriendsSidebar: React.FC = () => {
     
     setIsSearching(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/friends/search?query=${encodeURIComponent(searchQuery)}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/friends/search?query=${encodeURIComponent(searchQuery)}`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (response.ok) {
@@ -64,7 +64,7 @@ const FriendsSidebar: React.FC = () => {
 
   const sendRequest = async (targetUserId: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/friends/request`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/friends/request`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ const FriendsSidebar: React.FC = () => {
 
   const handleRequest = async (requestId: string, action: 'accepted' | 'rejected') => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/friends/respond`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/friends/respond`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

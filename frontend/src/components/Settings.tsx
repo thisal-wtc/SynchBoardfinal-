@@ -16,7 +16,7 @@ const Settings: React.FC = () => {
     // Fetch current profile
     const fetchProfile = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/profile`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -38,7 +38,7 @@ const Settings: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/profile`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

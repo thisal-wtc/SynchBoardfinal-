@@ -48,7 +48,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ roomId, isOpen, onClose }) => {
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms/${roomId}/messages`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${roomId}/messages`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -71,7 +71,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ roomId, isOpen, onClose }) => {
     if (!newMessage.trim()) return;
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms/${roomId}/messages`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${roomId}/messages`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

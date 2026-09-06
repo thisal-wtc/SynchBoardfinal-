@@ -22,7 +22,7 @@ const Dashboard: React.FC = () => {
 
   const fetchRooms = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (response.ok) {
@@ -42,7 +42,7 @@ const Dashboard: React.FC = () => {
     if (!newRoomName.trim()) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms/create`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/create`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

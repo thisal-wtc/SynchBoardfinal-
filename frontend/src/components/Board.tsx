@@ -70,7 +70,7 @@ export default function Board() {
   // Fetch Room Role
   useEffect(() => {
     if (actualRoomId && token) {
-      fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms/${actualRoomId}`, {
+      fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${actualRoomId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => res.json())
