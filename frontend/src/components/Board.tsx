@@ -68,6 +68,7 @@ export default function Board() {
   const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer'>('editor'); // default editor for personal
   const [columns, setColumns] = useState<any[]>([]);
   const [pendingDeleteColumn, setPendingDeleteColumn] = useState<string | null>(null);
+  const [roomMembers, setRoomMembers] = useState<any[]>([]);
   
   // Column Modal State
   const [columnModalOpen, setColumnModalOpen] = useState(false);
@@ -93,6 +94,7 @@ export default function Board() {
           } else {
             setUserRole('editor');
           }
+          setRoomMembers(data.members);
         }
         if (data.columns && data.columns.length > 0) {
           setColumns(data.columns.sort((a: any, b: any) => a.order - b.order));
@@ -457,6 +459,51 @@ export default function Board() {
           </div>
         </div>
         
+        {/* Room Members Section */}
+        {!isPersonal && roomMembers.length > 0 && (
+          <div className="flex items-center gap-2 mr-auto ml-2 md:ml-6 pl-2 md:pl-6 border-l border-gray-300 dark:border-gray-700">
+            <div className="flex -space-x-2">
+              {roomMembers.slice(0, 4).map((member, idx) => (
+                <div key={idx} className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 border-2 border-[var(--board-frame-bg)] flex items-center justify-center overflow-hidden shadow-sm" title={member.user?.name || member.user?.email || 'User'}>
+                  {member.user?.avatar ? (
+                    <img src={member.user.avatar} alt="" className="w-full h-full object-cover"/>
+                  ) : (
+                    <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300">
+                      {member.user?.name ? member.user.name.substring(0, 2).toUpperCase() : 'U'}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {roomMembers.length > 4 && (
+              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+                +{roomMembers.length - 4}
+              </span>
+            )}
+            
+            <button 
+              onClick={() => {
+                // Fetch the room to get the invite code if we don't have it locally
+                fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${actualRoomId}`, {
+                  headers: { Authorization: `Bearer ${token}` }
+                })
+                .then(res => res.json())
+                .then(data => {
+                  if (data.inviteCode) {
+                    navigator.clipboard.writeText(`${window.location.origin}/join/${data.inviteCode}`);
+                    toast.success('Invite link copied!');
+                  }
+                });
+              }}
+              className="ml-2 p-1.5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold"
+              title="Copy Invite Link"
+            >
+              <Plus size={14} strokeWidth={3} />
+              <span className="hidden sm:inline">Invite</span>
+            </button>
+          </div>
+        )}
+
         <div className="board-tools">
           <button
             className="btn btn-ghost"
