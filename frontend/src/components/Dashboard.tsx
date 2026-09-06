@@ -75,6 +75,16 @@ const Dashboard: React.FC = () => {
     if (!joinCode.trim()) return;
     setIsJoining(true);
 
+    // Smart extract code from a full URL if pasted
+    let extractedCode = joinCode.trim();
+    if (extractedCode.includes('/join/')) {
+      const parts = extractedCode.split('/join/');
+      extractedCode = parts[parts.length - 1];
+    } else if (extractedCode.includes('http')) {
+      const parts = extractedCode.split('/');
+      extractedCode = parts[parts.length - 1];
+    }
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/join`, {
         method: 'POST',
@@ -82,7 +92,7 @@ const Dashboard: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('syncboard_token')}`
         },
-        body: JSON.stringify({ inviteCode: joinCode.trim() })
+        body: JSON.stringify({ inviteCode: extractedCode })
       });
 
       const data = await response.json();

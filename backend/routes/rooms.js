@@ -1,4 +1,5 @@
 import express from 'express';
+import crypto from 'crypto';
 import Room from '../models/Room.js';
 import User from '../models/User.js';
 import Task from '../models/Task.js';
@@ -32,9 +33,21 @@ router.post('/create', verifyToken, async (req, res) => {
 // Get user's rooms
 router.get('/', verifyToken, async (req, res) => {
   try {
-    const rooms = await Room.find({ 
+    let rooms = await Room.find({ 
       'members.user': req.user._id
     }).populate('members.user', 'name email avatar');
+
+    // Backfill inviteCode for old rooms
+    let hasUpdates = false;
+    for (let room of rooms) {
+      if (!room.inviteCode) {
+        room.inviteCode = crypto.randomBytes(4).toString('hex');
+        await room.save();
+        hasUpdates = true;
+      }
+    }
+
+    // Return the updated rooms
     res.json(rooms);
   } catch (error) {
     res.status(500).json({ message: error.message });
