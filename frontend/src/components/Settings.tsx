@@ -18,7 +18,7 @@ const Settings: React.FC = () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('syncboard_token')}`
           }
         });
         if (response.ok) {
@@ -42,7 +42,7 @@ const Settings: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('syncboard_token')}`
         },
         body: JSON.stringify({ name, avatar, bio })
       });

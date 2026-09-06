@@ -23,7 +23,7 @@ const Dashboard: React.FC = () => {
   const fetchRooms = async () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('syncboard_token')}` }
       });
       if (response.ok) {
         setRooms(await response.json());
@@ -46,7 +46,7 @@ const Dashboard: React.FC = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('syncboard_token')}`
         },
         body: JSON.stringify({ name: newRoomName, description: newRoomDesc })
       });

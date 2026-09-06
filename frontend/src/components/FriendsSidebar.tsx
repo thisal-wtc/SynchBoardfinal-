@@ -26,7 +26,7 @@ const FriendsSidebar: React.FC = () => {
   const fetchFriends = async () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/friends`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('syncboard_token')}` }
       });
       if (response.ok) {
         const data = await response.json();
@@ -51,7 +51,7 @@ const FriendsSidebar: React.FC = () => {
       setIsSearching(true);
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/friends/search?query=${encodeURIComponent(searchQuery)}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('syncboard_token')}` }
         });
         if (response.ok) {
           setSearchResults(await response.json());
@@ -72,7 +72,7 @@ const FriendsSidebar: React.FC = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('syncboard_token')}`
         },
         body: JSON.stringify({ targetUserId })
       });
@@ -94,7 +94,7 @@ const FriendsSidebar: React.FC = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('syncboard_token')}`
         },
         body: JSON.stringify({ requestId, action })
       });
