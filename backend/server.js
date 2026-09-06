@@ -23,47 +23,34 @@ if (!process.env.MONGODB_URI) {
 
 const app = express();
 const httpServer = createServer(app);
-// socket.io disabled on Vercel Serverless
 const io = null;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Health check endpoint (for debugging)
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    mongoUri: process.env.MONGODB_URI ? 'SET' : 'NOT SET',
-    jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
-    dbState: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState],
-  });
-});
-
 // MongoDB connection with caching for serverless
-let isConnected = false;
+let dbPromise = null;
 
-async function connectDB() {
-  if (isConnected) return;
+function connectDB() {
+  if (dbPromise) return dbPromise;
   
   const uri = process.env.MONGODB_URI;
   if (!uri) {
-    console.error('CRITICAL: MONGODB_URI is not defined!');
-    return;
+    return Promise.reject(new Error('MONGODB_URI is not defined'));
   }
 
-  try {
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(uri);
-      isConnected = true;
-      console.log('Connected to MongoDB successfully!');
-    } else {
-      isConnected = true;
-    }
-  } catch (err) {
-    console.error('Failed to connect to MongoDB:', err);
+  dbPromise = mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  }).then(() => {
+    console.log('Connected to MongoDB successfully!');
+  }).catch((err) => {
+    dbPromise = null; // Reset so next request retries
     throw err;
-  }
+  });
+
+  return dbPromise;
 }
 
 // Ensure DB is connected before any route handler runs
@@ -72,8 +59,19 @@ app.use(async (req, res, next) => {
     await connectDB();
     next();
   } catch (err) {
+    console.error('DB connection error:', err.message);
     res.status(500).json({ message: 'Database connection failed', error: err.message });
   }
+});
+
+// Health check endpoint (AFTER DB middleware so it triggers connection)
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    mongoUri: process.env.MONGODB_URI ? 'SET' : 'NOT SET',
+    jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
+    dbState: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState],
+  });
 });
 
 // Routes
@@ -85,7 +83,7 @@ app.use('/api/rooms', roomRoutes);
 // Make io accessible in routes
 app.set('io', io);
 
-// Serve frontend static files only in local dev (Monolith mode)
+// Serve frontend static files only in local dev
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
   app.get('*', (req, res) => {
@@ -93,7 +91,7 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Start server locally (Vercel handles the export automatically)
+// Start server locally
 if (process.env.NODE_ENV !== 'production') {
   connectDB().then(() => {
     const PORT = process.env.PORT || 5000;
