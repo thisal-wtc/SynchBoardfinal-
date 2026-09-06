@@ -2,6 +2,12 @@ export type TaskStatus = 'todo' | 'in-progress' | 'done';
 
 export type NoteColor = 'yellow' | 'pink' | 'sky' | 'mint' | 'lilac';
 
+export interface Subtask {
+  _id?: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -9,6 +15,7 @@ export interface Task {
   color: NoteColor;
   status: TaskStatus;
   dueDate?: string | null;
+  subtasks?: Subtask[];
   createdAt: number;
   updatedAt: number;
 }

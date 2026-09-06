@@ -12,16 +12,23 @@ import {
 } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pin as PinIcon, Plus, AlertCircle, MapPin, Edit2, Trash2, LogOut, Search, Bell } from 'lucide-react';
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { Moon, Sun, MessageSquare, Calendar as CalendarIcon, Phone } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useTasks } from '../hooks/useTasks';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
+import { useTheme } from '../context/ThemeContext';
 import type { NoteColor, Task, TaskStatus } from '../types';
-import { COLUMNS } from '../types';
+import { canDelete, canEdit, COLUMNS } from '../types';
 import Column from './Column';
 import ConfirmDialog from './ConfirmDialog';
 import DragGhost from './DragGhost';
 import TaskModal from './TaskModal';
+import ChatPanel from './ChatPanel';
+import VoiceChat from './VoiceChat';
+import CalendarView from './CalendarView';
 
 interface Activity {
   id: string;
@@ -30,8 +37,15 @@ interface Activity {
 }
 
 export default function Board() {
-  const { logout, user } = useAuth();
-  const { tasks, addTask, updateTask, deleteTask, moveTask } = useTasks();
+  const { id: roomId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const isPersonal = !roomId || roomId === 'personal';
+  const actualRoomId = isPersonal ? undefined : roomId;
+
+  const { logout, user, token } = useAuth();
+  const { socket, isConnected } = useSocket();
+  const { theme, toggleTheme } = useTheme();
+  const { tasks, setTasks, addTask, updateTask, deleteTask, moveTask } = useTasks(actualRoomId);
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -41,11 +55,129 @@ export default function Board() {
   const [shakeColumn, setShakeColumn] = useState<TaskStatus | null>(null);
   const [dragDeltaX, setDragDeltaX] = useState(0);
 
+  // Live cursors state
+  const [cursors, setCursors] = useState<{ [id: string]: { x: number, y: number, user: any } }>({});
+
   // Pro Features State
   const [searchQuery, setSearchQuery] = useState('');
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [activityLog, setActivityLog] = useState<Activity[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false);
+  const [isCalendarView, setIsCalendarView] = useState(false);
+  const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer'>('editor'); // default editor for personal
+
+  // Fetch Room Role
+  useEffect(() => {
+    if (actualRoomId && token) {
+      fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms/${actualRoomId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.members) {
+          const myMembership = data.members.find((m: any) => {
+            // Handle new schema (object with user) or old schema (string/ObjectId)
+            if (m.user && m.user._id) return m.user._id === user?.id;
+            return m === user?.id || (m._id && m._id === user?.id);
+          });
+          if (myMembership && myMembership.role) {
+            setUserRole(myMembership.role);
+          } else {
+            // Fallback for old rooms
+            setUserRole('editor');
+          }
+        }
+      })
+      .catch(err => console.error(err));
+    } else {
+      setUserRole('editor');
+    }
+  }, [actualRoomId, token, user]);
+
+  // Room Join and Socket Events
+  useEffect(() => {
+    if (socket && isConnected && actualRoomId) {
+      socket.emit('join-room', actualRoomId);
+
+      const onTaskAdded = (newTask: any) => {
+        const task = { ...newTask, id: newTask._id || newTask.id };
+        setTasks(prev => {
+          if (prev.find(t => t.id === task.id)) return prev;
+          return [...prev, task];
+        });
+      };
+
+      const onTaskUpdated = (updatedTask: any) => {
+        const task = { ...updatedTask, id: updatedTask._id || updatedTask.id };
+        setTasks(prev => prev.map(t => t.id === task.id ? task : t));
+      };
+
+      const onTaskDeleted = (taskId: string) => {
+        setTasks(prev => prev.filter(t => t.id !== taskId));
+      };
+
+      const onCursorMove = (data: any) => {
+        setCursors(prev => ({
+          ...prev,
+          [data.socketId]: data
+        }));
+        // Remove cursor after inactivity
+        setTimeout(() => {
+          setCursors(p => {
+            const copy = { ...p };
+            delete copy[data.socketId];
+            return copy;
+          });
+        }, 5000);
+      };
+
+      socket.on('task-added', onTaskAdded);
+      socket.on('task-updated', onTaskUpdated);
+      socket.on('task-deleted', onTaskDeleted);
+      socket.on('cursor-move', onCursorMove);
+
+      return () => {
+        socket.off('task-added', onTaskAdded);
+        socket.off('task-updated', onTaskUpdated);
+        socket.off('task-deleted', onTaskDeleted);
+        socket.off('cursor-move', onCursorMove);
+      };
+    }
+  }, [socket, isConnected, actualRoomId, setTasks]);
+
+  // Track mouse move for cursor syncing
+  useEffect(() => {
+    if (socket && isConnected && actualRoomId && user) {
+      const handleMouseMove = (e: MouseEvent) => {
+        // Send normalized coordinates
+        const x = e.clientX / window.innerWidth;
+        const y = e.clientY / window.innerHeight;
+        socket.emit('cursor-move', {
+          roomId: actualRoomId,
+          x,
+          y,
+          socketId: socket.id,
+          user: { name: user.name || user.email, avatar: user.avatar }
+        });
+      };
+      
+      // Throttle mouse moves (very naive implementation for demo)
+      let timeout: any;
+      const throttledMove = (e: MouseEvent) => {
+        if (timeout) return;
+        timeout = setTimeout(() => {
+          handleMouseMove(e);
+          timeout = null;
+        }, 50);
+      };
+
+      window.addEventListener('mousemove', throttledMove);
+      return () => window.removeEventListener('mousemove', throttledMove);
+    }
+  }, [socket, isConnected, actualRoomId, user]);
+
   
   const notifRef = useRef<HTMLDivElement>(null);
   const notifiedTasks = useRef<Set<string>>(new Set());
@@ -123,6 +255,7 @@ export default function Board() {
   }, [tasks, searchQuery]);
 
   function handleDragStart(event: DragStartEvent) {
+    if (userRole === 'viewer') return;
     const task = tasks.find((t) => t.id === event.active.id);
     setActiveTask(task ?? null);
     setDragDeltaX(0);
@@ -133,6 +266,7 @@ export default function Board() {
   }
 
   function handleDragEnd(event: DragEndEvent) {
+    if (userRole === 'viewer') return;
     const { active, over } = event;
     setActiveTask(null);
     setDragDeltaX(0);
@@ -166,12 +300,20 @@ export default function Board() {
   }
 
   function openAddModal() {
+    if (userRole === 'viewer') {
+      toast.error("Viewers cannot add tasks");
+      return;
+    }
     setModalMode('add');
     setEditingTask(null);
     setModalOpen(true);
   }
 
   function openEditModal(task: Task) {
+    if (userRole === 'viewer') {
+      toast.error("Viewers cannot edit tasks");
+      return;
+    }
     setModalMode('edit');
     setEditingTask(task);
     setModalOpen(true);
@@ -229,6 +371,14 @@ export default function Board() {
         </div>
         
         <div className="board-tools">
+          <button
+            className="btn btn-ghost"
+            title="Toggle Dark Mode"
+            onClick={toggleTheme}
+          >
+            {theme === 'dark' ? <Sun size={18} color="var(--ink-soft)" /> : <Moon size={18} color="var(--ink-soft)" />}
+          </button>
+          
           <div className="search-bar">
             <Search size={16} color="var(--ink-soft)" />
             <input 
@@ -238,6 +388,34 @@ export default function Board() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          
+          <button 
+            className="btn btn-ghost" 
+            title="Toggle Calendar View"
+            onClick={() => setIsCalendarView(!isCalendarView)}
+          >
+            <CalendarIcon size={18} color={isCalendarView ? "#3B82F6" : "var(--ink-soft)"} />
+          </button>
+
+          {actualRoomId && (
+            <>
+              <button 
+                className="btn btn-ghost" 
+                title="Toggle Room Chat"
+                onClick={() => setIsChatOpen(!isChatOpen)}
+              >
+                <MessageSquare size={18} color={isChatOpen ? "#3B82F6" : "var(--ink-soft)"} />
+              </button>
+
+              <button 
+                className="btn btn-ghost" 
+                title="Join Voice Channel"
+                onClick={() => setIsVoiceOpen(true)}
+              >
+                <Phone size={18} color="var(--ink-soft)" />
+              </button>
+            </>
+          )}
 
           <div className="notification-wrapper" ref={notifRef}>
             <button className="notification-bell" onClick={toggleNotifications}>
@@ -285,16 +463,18 @@ export default function Board() {
             {user?.email}
           </span>
           
-          <motion.button
-            type="button"
-            className="btn btn-add"
-            onClick={openAddModal}
-            whileHover={{ scale: 1.04, y: -2 }}
-            whileTap={{ scale: 0.96 }}
-          >
-            <Plus size={18} strokeWidth={2.6} />
-            Add task
-          </motion.button>
+          {userRole !== 'viewer' && (
+            <motion.button
+              type="button"
+              className="btn btn-add"
+              onClick={openAddModal}
+              whileHover={{ scale: 1.04, y: -2 }}
+              whileTap={{ scale: 0.96 }}
+            >
+              <Plus size={18} strokeWidth={2.6} />
+              Add task
+            </motion.button>
+          )}
           
           <motion.button
             type="button"
@@ -311,34 +491,54 @@ export default function Board() {
         </div>
       </header>
 
-      <main className="board-frame">
-        <div className="board-frame-inner">
-          <DndContext
-            sensors={sensors}
-            onDragStart={handleDragStart}
-            onDragMove={handleDragMove}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="board-columns">
-              {COLUMNS.map((col) => (
-                <div key={col.id} className={shakeColumn === col.id ? 'shake-wrap' : ''}>
-                  <Column
-                    config={col}
-                    tasks={tasksByStatus[col.id]}
-                    activeTask={activeTask}
-                    onEdit={openEditModal}
-                    onRequestDelete={setPendingDelete}
-                  />
-                </div>
-              ))}
-            </div>
-            <DragOverlay dropAnimation={dropAnimationConfig}>
-              {activeTask ? <DragGhost task={activeTask} tiltDelta={dragDeltaX} /> : null}
-            </DragOverlay>
-          </DndContext>
-        </div>
+      <main className="board-frame relative flex">
+        {isCalendarView ? (
+          <div className="w-full h-full p-4">
+             <CalendarView tasks={tasks} />
+          </div>
+        ) : (
+          <div className="board-frame-inner flex-1">
+            <DndContext
+              sensors={sensors}
+              onDragStart={handleDragStart}
+              onDragMove={handleDragMove}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="board-columns">
+                {COLUMNS.map((col) => (
+                  <div key={col.id} className={shakeColumn === col.id ? 'shake-wrap' : ''}>
+                    <Column
+                      config={col}
+                      tasks={tasksByStatus[col.id]}
+                      activeTask={activeTask}
+                      onEdit={openEditModal}
+                      onRequestDelete={setPendingDelete}
+                    />
+                  </div>
+                ))}
+              </div>
+              <DragOverlay dropAnimation={dropAnimationConfig}>
+                {activeTask ? <DragGhost task={activeTask} tiltDelta={dragDeltaX} /> : null}
+              </DragOverlay>
+            </DndContext>
+          </div>
+        )}
         <div className="board-tray" aria-hidden="true" />
       </main>
+
+      {actualRoomId && (
+        <ChatPanel 
+          roomId={actualRoomId} 
+          isOpen={isChatOpen} 
+          onClose={() => setIsChatOpen(false)} 
+        />
+      )}
+
+      {isVoiceOpen && actualRoomId && (
+        <div className="fixed bottom-4 left-4 z-50">
+          <VoiceChat roomId={actualRoomId} onLeave={() => setIsVoiceOpen(false)} />
+        </div>
+      )}
 
       <TaskModal
         open={modalOpen}
@@ -349,6 +549,25 @@ export default function Board() {
       />
 
       <ConfirmDialog task={pendingDelete} onCancel={() => setPendingDelete(null)} onConfirm={handleConfirmDelete} />
+
+      {/* Live Cursors */}
+      {Object.values(cursors).map((cursor, i) => (
+        <div
+          key={i}
+          className="pointer-events-none fixed z-50 flex items-center gap-2 transition-all duration-100 ease-linear"
+          style={{
+            left: `${cursor.x * 100}vw`,
+            top: `${cursor.y * 100}vh`,
+          }}
+        >
+          <div className="w-4 h-4 rounded-full bg-indigo-500 shadow-md border-2 border-white flex items-center justify-center overflow-hidden">
+             {cursor.user.avatar ? <img src={cursor.user.avatar} className="w-full h-full object-cover" /> : <span className="text-[8px] text-white font-bold">{cursor.user.name[0]}</span>}
+          </div>
+          <span className="bg-indigo-500 text-white text-xs px-2 py-0.5 rounded shadow-sm">
+            {cursor.user.name}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

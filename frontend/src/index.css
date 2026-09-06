@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   /* Board & chrome */
   --board-bg: #eef1f5;
@@ -28,6 +32,26 @@
   --font-body: 'Inter', system-ui, sans-serif;
 
   color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  /* Board & chrome */
+  --board-bg: #1e293b; /* slate-800 */
+  --frame: #334155; /* slate-700 */
+  --frame-dark: #475569; /* slate-600 */
+  --ink: #f8fafc; /* slate-50 */
+  --ink-soft: #cbd5e1; /* slate-300 */
+  --panel: rgba(15, 23, 42, 0.75); /* slate-900 with opacity */
+  --panel-border: rgba(255, 255, 255, 0.1);
+
+  /* Note shadows need to be slightly darker in dark mode for contrast */
+  --note-yellow-shadow: #c7a421;
+  --note-pink-shadow: #c2657e;
+  --note-sky-shadow: #4d86a3;
+  --note-mint-shadow: #72a184;
+  --note-lilac-shadow: #876fa3;
+
+  color-scheme: dark;
 }
 
 * {

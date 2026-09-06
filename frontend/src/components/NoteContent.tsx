@@ -1,4 +1,4 @@
-import { Pencil, Trash2, Clock } from 'lucide-react';
+import { Pencil, Trash2, Clock, ListChecks } from 'lucide-react';
 import type { Task } from '../types';
 
 function getDueDateStyle(dateString: string): React.CSSProperties {
@@ -80,6 +80,13 @@ export default function NoteContent({
           <div className="note-due" style={getDueDateStyle(task.dueDate)}>
             <Clock size={12} strokeWidth={2.4} />
             <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+          </div>
+        )}
+
+        {task.subtasks && task.subtasks.length > 0 && (
+          <div className="note-due" style={{ color: 'rgba(0,0,0,0.6)', marginTop: '4px' }}>
+            <ListChecks size={12} strokeWidth={2.4} />
+            <span>{task.subtasks.filter(st => st.completed).length}/{task.subtasks.length}</span>
           </div>
         )}
       </div>

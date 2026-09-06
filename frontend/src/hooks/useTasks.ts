@@ -10,11 +10,11 @@ export type MoveResult =
 
 const API_URL = '/api/tasks';
 
-export function useTasks() {
+export function useTasks(roomId?: string) {
   const [tasks, setTasks] = useState<Task[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
-      const saved = localStorage.getItem('synchboard_tasks');
+      const saved = localStorage.getItem(`synchboard_tasks_${roomId || 'personal'}`);
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -24,9 +24,9 @@ export function useTasks() {
   // Sync tasks to localStorage for offline persistence
   useEffect(() => {
     if (tasks.length > 0) {
-      localStorage.setItem('synchboard_tasks', JSON.stringify(tasks));
+      localStorage.setItem(`synchboard_tasks_${roomId || 'personal'}`, JSON.stringify(tasks));
     }
-  }, [tasks]);
+  }, [tasks, roomId]);
   const { token, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
@@ -34,7 +34,8 @@ export function useTasks() {
 
     const fetchTasks = async () => {
       try {
-        const res = await fetch(API_URL, {
+        const url = roomId ? `${API_URL}?roomId=${roomId}` : API_URL;
+        const res = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.status === 401 || res.status === 403) {
@@ -56,10 +57,10 @@ export function useTasks() {
     };
 
     fetchTasks();
-  }, [isAuthenticated, token, logout]);
+  }, [isAuthenticated, token, logout, roomId]);
 
   const addTask = useCallback(
-    async (title: string, description: string, color: NoteColor, dueDate?: string | null) => {
+    async (title: string, description: string, color: NoteColor, dueDate?: string | null, subtasks?: { title: string, completed: boolean }[]) => {
       if (!token) return;
       try {
         const res = await fetch(API_URL, {
@@ -68,7 +69,7 @@ export function useTasks() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ title, description, color, status: 'todo', dueDate }),
+          body: JSON.stringify({ title, description, color, status: 'todo', dueDate, room: roomId || null, subtasks: subtasks || [] }),
         });
         if (res.status === 401 || res.status === 403) {
           logout();
@@ -87,7 +88,7 @@ export function useTasks() {
   );
 
   const updateTask = useCallback(
-    async (id: string, updates: { title: string; description: string; color: NoteColor; dueDate?: string | null }) => {
+    async (id: string, updates: { title: string; description: string; color: NoteColor; dueDate?: string | null; subtasks?: { title: string, completed: boolean }[] }) => {
       if (!token) return false;
       
       // Optimistic update
@@ -103,6 +104,7 @@ export function useTasks() {
             description: updates.description.trim(),
             color: updates.color,
             dueDate: updates.dueDate,
+            subtasks: updates.subtasks !== undefined ? updates.subtasks : t.subtasks,
             updatedAt: Date.now(),
           };
         })
@@ -208,5 +210,5 @@ export function useTasks() {
     [tasks, token, logout]
   );
 
-  return { tasks, addTask, updateTask, deleteTask, moveTask };
+  return { tasks, setTasks, addTask, updateTask, deleteTask, moveTask };
 }

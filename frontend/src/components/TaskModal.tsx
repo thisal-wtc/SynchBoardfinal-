@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Calendar } from 'lucide-react';
+import { X, Calendar, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { NoteColor, Task } from '../types';
+import type { NoteColor, Task, Subtask } from '../types';
 import { NOTE_COLORS } from '../types';
 
 interface TaskModalProps {
@@ -9,7 +9,7 @@ interface TaskModalProps {
   mode: 'add' | 'edit';
   initial?: Task | null;
   onClose: () => void;
-  onSubmit: (title: string, description: string, color: NoteColor, dueDate?: string | null) => Promise<void> | void;
+  onSubmit: (title: string, description: string, color: NoteColor, dueDate?: string | null, subtasks?: { title: string, completed: boolean }[]) => Promise<void> | void;
 }
 
 export default function TaskModal({ open, mode, initial, onClose, onSubmit }: TaskModalProps) {
@@ -17,6 +17,9 @@ export default function TaskModal({ open, mode, initial, onClose, onSubmit }: Ta
   const [description, setDescription] = useState('');
   const [color, setColor] = useState<NoteColor>('yellow');
   const [dueDate, setDueDate] = useState('');
+  const [subtasks, setSubtasks] = useState<{ title: string, completed: boolean }[]>([]);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
+  
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
@@ -29,6 +32,8 @@ export default function TaskModal({ open, mode, initial, onClose, onSubmit }: Ta
       setDescription(initial?.description ?? '');
       setColor(initial?.color ?? 'yellow');
       setDueDate(initial?.dueDate ? new Date(initial.dueDate).toISOString().split('T')[0] : '');
+      setSubtasks(initial?.subtasks?.map(st => ({ title: st.title, completed: st.completed })) ?? []);
+      setNewSubtaskTitle('');
       setError('');
       setIsSubmitting(false);
     }
@@ -49,6 +54,20 @@ export default function TaskModal({ open, mode, initial, onClose, onSubmit }: Ta
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
+  const handleAddSubtask = () => {
+    if (!newSubtaskTitle.trim()) return;
+    setSubtasks([...subtasks, { title: newSubtaskTitle.trim(), completed: false }]);
+    setNewSubtaskTitle('');
+  };
+
+  const handleRemoveSubtask = (index: number) => {
+    setSubtasks(subtasks.filter((_, i) => i !== index));
+  };
+
+  const handleToggleSubtask = (index: number) => {
+    setSubtasks(subtasks.map((st, i) => i === index ? { ...st, completed: !st.completed } : st));
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (isSubmitting) return;
@@ -60,7 +79,7 @@ export default function TaskModal({ open, mode, initial, onClose, onSubmit }: Ta
     
     setIsSubmitting(true);
     try {
-      await onSubmit(title, description, color, dueDate || null);
+      await onSubmit(title, description, color, dueDate || null, subtasks);
     } finally {
       setIsSubmitting(false);
     }
@@ -133,6 +152,56 @@ export default function TaskModal({ open, mode, initial, onClose, onSubmit }: Ta
               onChange={(e) => setDueDate(e.target.value)}
               disabled={isSubmitting}
             />
+
+            <label className="field-label">
+              Subtasks <span className="field-optional">(optional)</span>
+            </label>
+            <div className="flex flex-col gap-2 mb-4">
+              {subtasks.map((st, i) => (
+                <div key={i} className="flex items-center gap-2 bg-white/50 p-2 rounded border border-black/10">
+                  <input 
+                    type="checkbox" 
+                    checked={st.completed} 
+                    onChange={() => handleToggleSubtask(i)}
+                    className="w-4 h-4 text-indigo-600 rounded"
+                  />
+                  <span className={`flex-1 text-sm ${st.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+                    {st.title}
+                  </span>
+                  <button 
+                    type="button" 
+                    onClick={() => handleRemoveSubtask(i)}
+                    className="text-red-400 hover:text-red-600 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+              <div className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  placeholder="Add a subtask..."
+                  value={newSubtaskTitle}
+                  onChange={e => setNewSubtaskTitle(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddSubtask();
+                    }
+                  }}
+                  className="flex-1 field-input !mb-0 text-sm py-1.5"
+                  disabled={isSubmitting}
+                />
+                <button 
+                  type="button" 
+                  onClick={handleAddSubtask}
+                  className="p-1.5 bg-indigo-100 text-indigo-600 rounded hover:bg-indigo-200 transition-colors"
+                  disabled={isSubmitting || !newSubtaskTitle.trim()}
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            </div>
 
             <span className="field-label">Note color</span>
             <div className="color-swatches">

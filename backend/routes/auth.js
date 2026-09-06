@@ -59,4 +59,39 @@ router.post('/login', async (req, res) => {
   }
 });
 
+import { verifyToken } from '../middleware/auth.js';
+
+// PROFILE UPDATE
+router.put('/profile', verifyToken, async (req, res) => {
+  try {
+    const { name, avatar, bio } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (name !== undefined) user.name = name;
+    if (avatar !== undefined) user.avatar = avatar;
+    if (bio !== undefined) user.bio = bio;
+
+    await user.save();
+    res.json({ message: 'Profile updated successfully', user: { id: user._id, email: user.email, name: user.name, avatar: user.avatar, bio: user.bio } });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// GET CURRENT USER PROFILE
+router.get('/profile', verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 export default router;
