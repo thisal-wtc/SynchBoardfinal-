@@ -15,10 +15,14 @@ router.post('/create', verifyToken, async (req, res) => {
       name,
       description,
       owner: req.user._id,
-      members: [{ user: req.user._id, role: 'owner' }] // Owner is automatically a member
+      members: [{ user: req.user._id, role: 'owner' }]
     });
 
     await room.save();
+    
+    // Populate members before sending response
+    await room.populate('members.user', 'name email avatar');
+    
     res.status(201).json(room);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -29,11 +33,8 @@ router.post('/create', verifyToken, async (req, res) => {
 router.get('/', verifyToken, async (req, res) => {
   try {
     const rooms = await Room.find({ 
-      $or: [
-        { 'members.user': req.user._id }, 
-        { members: req.user._id }
-      ] 
-    }).populate('members.user', 'name email avatar').populate('members', 'name email avatar');
+      'members.user': req.user._id
+    }).populate('members.user', 'name email avatar');
     res.json(rooms);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -43,18 +44,46 @@ router.get('/', verifyToken, async (req, res) => {
 // Get single room by ID
 router.get('/:id', verifyToken, async (req, res) => {
   try {
-    const room = await Room.findById(req.params.id).populate('members.user', 'name email avatar').populate('members', 'name email avatar');
+    const room = await Room.findById(req.params.id).populate('members.user', 'name email avatar');
     if (!room) return res.status(404).json({ message: "Room not found" });
     
     // Check if user is a member
-    if (!room.members.some(m => {
-      if (m.user && m.user._id) return m.user._id.toString() === req.user._id;
-      return m._id ? m._id.toString() === req.user._id : m.toString() === req.user._id;
-    })) {
+    const isMember = room.members.some(m => 
+      m.user && m.user._id && m.user._id.toString() === req.user._id
+    );
+    if (!isMember) {
       return res.status(403).json({ message: "Access denied" });
     }
 
     res.json(room);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Join room by invite code
+router.post('/join', verifyToken, async (req, res) => {
+  try {
+    const { inviteCode } = req.body;
+    
+    const room = await Room.findOne({ inviteCode });
+    if (!room) {
+      return res.status(404).json({ message: 'Invalid invite code' });
+    }
+
+    // Check if already a member
+    const alreadyMember = room.members.some(m =>
+      m.user && m.user.toString() === req.user._id
+    );
+    if (alreadyMember) {
+      return res.status(400).json({ message: 'You are already in this room', roomId: room._id });
+    }
+
+    room.members.push({ user: req.user._id, role: 'editor' });
+    await room.save();
+    await room.populate('members.user', 'name email avatar');
+
+    res.json({ message: 'Joined room successfully!', room });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -67,17 +96,14 @@ router.put('/:id/columns', verifyToken, async (req, res) => {
     const room = await Room.findById(req.params.id);
     if (!room) return res.status(404).json({ message: "Room not found" });
     
-    // Check if user is a member
-    const myMembership = room.members.find(m => {
-      if (m.user) return m.user.toString() === req.user._id;
-      return m._id ? m._id.toString() === req.user._id : m.toString() === req.user._id;
-    });
+    const myMembership = room.members.find(m =>
+      m.user && m.user.toString() === req.user._id
+    );
     
     if (!myMembership) {
       return res.status(403).json({ message: "Access denied" });
     }
     
-    // Only owner or editor can update columns
     if (myMembership.role === 'viewer') {
       return res.status(403).json({ message: "Viewers cannot update columns" });
     }
@@ -99,27 +125,22 @@ router.post('/:id/invite', verifyToken, async (req, res) => {
     
     if (!room) return res.status(404).json({ message: "Room not found" });
     
-    const myMembership = room.members.find(m => {
-      if (m.user) return m.user.toString() === req.user._id;
-      return m._id ? m._id.toString() === req.user._id : m.toString() === req.user._id;
-    });
+    const myMembership = room.members.find(m =>
+      m.user && m.user.toString() === req.user._id
+    );
     if (!myMembership) {
       return res.status(403).json({ message: "Not a member of this room" });
     }
     
-    // Only owner or editors can invite
     if (myMembership.role === 'viewer') {
       return res.status(403).json({ message: "Viewers cannot invite members" });
     }
 
-    if (room.members.some(m => {
-      if (m.user) return m.user.toString() === targetUserId;
-      return m._id ? m._id.toString() === targetUserId : m.toString() === targetUserId;
-    })) {
+    if (room.members.some(m => m.user && m.user.toString() === targetUserId)) {
       return res.status(400).json({ message: "User already in room" });
     }
 
-    room.members.push({ user: targetUserId, role: 'editor' }); // default invite role
+    room.members.push({ user: targetUserId, role: 'editor' });
     await room.save();
     
     res.json({ message: "User invited successfully", room });
@@ -134,10 +155,7 @@ import Message from '../models/Message.js';
 router.get('/:id/messages', verifyToken, async (req, res) => {
   try {
     const room = await Room.findById(req.params.id);
-    if (!room || !room.members.some(m => {
-      if (m.user) return m.user.toString() === req.user._id;
-      return m._id ? m._id.toString() === req.user._id : m.toString() === req.user._id;
-    })) {
+    if (!room || !room.members.some(m => m.user && m.user.toString() === req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -156,10 +174,7 @@ router.get('/:id/messages', verifyToken, async (req, res) => {
 router.post('/:id/messages', verifyToken, async (req, res) => {
   try {
     const room = await Room.findById(req.params.id);
-    if (!room || !room.members.some(m => {
-      if (m.user) return m.user.toString() === req.user._id;
-      return m._id ? m._id.toString() === req.user._id : m.toString() === req.user._id;
-    })) {
+    if (!room || !room.members.some(m => m.user && m.user.toString() === req.user._id)) {
       return res.status(403).json({ message: "Access denied" });
     }
 
@@ -170,8 +185,6 @@ router.post('/:id/messages', verifyToken, async (req, res) => {
     });
 
     await message.save();
-    
-    // Populate sender before broadcasting
     await message.populate('sender', 'name avatar');
     
     const io = req.app.get('io');

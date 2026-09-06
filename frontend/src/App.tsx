@@ -9,6 +9,7 @@ import { Toaster } from 'react-hot-toast';
 import { SocketProvider } from './context/SocketContext';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
+import JoinRoom from './components/JoinRoom';
 import './styles.css';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/room/:id" element={<Board />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/join/:code" element={<JoinRoom />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FriendsSidebar from './FriendsSidebar';
-import { Users, Plus, Settings as SettingsIcon, Layout, LogOut, User } from 'lucide-react';
+import { Users, Plus, Settings as SettingsIcon, Layout, LogOut, User, Copy, Link2, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Room {
   _id: string;
   name: string;
   description: string;
-  members: { _id: string, name: string, avatar: string }[];
+  inviteCode: string;
+  members: { user: { _id: string, name: string, avatar: string } }[];
 }
 
 const Dashboard: React.FC = () => {
@@ -19,6 +20,8 @@ const Dashboard: React.FC = () => {
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [newRoomDesc, setNewRoomDesc] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
 
   const fetchRooms = async () => {
     try {
@@ -67,12 +70,50 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleJoinRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!joinCode.trim()) return;
+    setIsJoining(true);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/join`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('syncboard_token')}`
+        },
+        body: JSON.stringify({ inviteCode: joinCode.trim() })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Joined room!');
+        setJoinCode('');
+        fetchRooms();
+        if (data.room?._id) navigate(`/room/${data.room._id}`);
+      } else {
+        toast.error(data.message || 'Failed to join');
+      }
+    } catch (error) {
+      toast.error('Failed to join room');
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const copyInviteLink = (room: Room) => {
+    const link = `${window.location.origin}/join/${room.inviteCode}`;
+    navigator.clipboard.writeText(link);
+    toast.success('Invite link copied!');
+  };
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-inter transition-colors duration-200">
-      {/* Sidebar for Navigation / Friends */}
+      {/* Sidebar */}
       <div className="w-20 lg:w-64 bg-gray-900 dark:bg-gray-950 text-white flex flex-col justify-between shrink-0 transition-colors duration-200">
         <div>
-          <div className="p-4 lg:p-6 flex items-center justify-center lg:justify-start gap-3 border-b border-gray-800 dark:border-gray-800">
+          <div className="p-4 lg:p-6 flex items-center justify-center lg:justify-start gap-3 border-b border-gray-800">
             <Layout className="w-8 h-8 text-indigo-400" />
             <h1 className="text-xl font-bold tracking-tight hidden lg:block">SynchBoard</h1>
           </div>
@@ -82,14 +123,14 @@ const Dashboard: React.FC = () => {
               <Layout className="w-5 h-5" />
               <span className="hidden lg:block">Dashboard</span>
             </button>
-            <button onClick={() => navigate('/settings')} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-800 dark:hover:bg-gray-800/50 rounded-lg text-gray-300 hover:text-white transition-colors font-medium">
+            <button onClick={() => navigate('/settings')} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-800 rounded-lg text-gray-300 hover:text-white transition-colors font-medium">
               <SettingsIcon className="w-5 h-5" />
               <span className="hidden lg:block">Settings</span>
             </button>
           </nav>
         </div>
 
-        <div className="p-4 border-t border-gray-800 dark:border-gray-800">
+        <div className="p-4 border-t border-gray-800">
           <button onClick={logout} className="w-full flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 hover:bg-red-500/10 hover:text-red-400 text-gray-400 rounded-lg transition-colors font-medium">
             <LogOut className="w-5 h-5" />
             <span className="hidden lg:block">Logout</span>
@@ -97,7 +138,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         <main className="flex-1 overflow-y-auto p-8">
           <div className="max-w-5xl mx-auto">
@@ -114,6 +155,32 @@ const Dashboard: React.FC = () => {
                 Personal Board
               </button>
             </header>
+
+            {/* Join Room by Code */}
+            <div className="mb-8 flex gap-3">
+              <form onSubmit={handleJoinRoom} className="flex gap-3 flex-1 max-w-md">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Link2 className="w-4 h-4 text-gray-400" />
+                  </div>
+                  <input 
+                    type="text"
+                    placeholder="Enter invite code to join a room..."
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={isJoining || !joinCode.trim()}
+                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2 text-sm"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  {isJoining ? 'Joining...' : 'Join'}
+                </button>
+              </form>
+            </div>
 
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
@@ -174,23 +241,35 @@ const Dashboard: React.FC = () => {
               {rooms.map(room => (
                 <div 
                   key={room._id} 
-                  onClick={() => navigate(`/room/${room._id}`)}
                   className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-500 cursor-pointer transition-all group"
                 >
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2">{room.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{room.description || 'No description provided.'}</p>
+                  <div onClick={() => navigate(`/room/${room._id}`)}>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mb-2">{room.name}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 line-clamp-2">{room.description || 'No description provided.'}</p>
+                  </div>
                   
-                  <div className="flex items-center gap-2">
-                    <div className="flex -space-x-2">
-                      {room.members.slice(0, 3).map((member, idx) => (
-                        <div key={idx} className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 border-2 border-white dark:border-gray-800 flex items-center justify-center overflow-hidden">
-                          {member.avatar ? <img src={member.avatar} alt="" className="w-full h-full object-cover"/> : <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">{member.name ? member.name[0] : 'U'}</span>}
-                        </div>
-                      ))}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex -space-x-2">
+                        {room.members.slice(0, 3).map((member, idx) => (
+                          <div key={idx} className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 border-2 border-white dark:border-gray-800 flex items-center justify-center overflow-hidden">
+                            {member.user?.avatar ? <img src={member.user.avatar} alt="" className="w-full h-full object-cover"/> : <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">{member.user?.name ? member.user.name[0] : 'U'}</span>}
+                          </div>
+                        ))}
+                      </div>
+                      {room.members.length > 3 && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">+{room.members.length - 3} more</span>
+                      )}
                     </div>
-                    {room.members.length > 3 && (
-                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">+{room.members.length - 3} more</span>
-                    )}
+                    
+                    {/* Copy Invite Link */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); copyInviteLink(room); }}
+                      className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                      title="Copy invite link"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}

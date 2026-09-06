@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 const roomSchema = new mongoose.Schema({
   name: {
@@ -13,6 +14,11 @@ const roomSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+  },
+  inviteCode: {
+    type: String,
+    unique: true,
+    default: () => crypto.randomBytes(4).toString('hex'),
   },
   members: [{
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
