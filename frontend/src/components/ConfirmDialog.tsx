@@ -1,16 +1,19 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import type { Task } from '../types';
 
 interface ConfirmDialogProps {
-  task: Task | null;
+  open: boolean;
+  title: string;
+  message: React.ReactNode;
+  confirmText?: string;
+  cancelText?: string;
   onCancel: () => void;
   onConfirm: () => void;
 }
 
-export default function ConfirmDialog({ task, onCancel, onConfirm }: ConfirmDialogProps) {
+export default function ConfirmDialog({ open, title, message, confirmText = 'Delete', cancelText = 'Keep it', onCancel, onConfirm }: ConfirmDialogProps) {
   return (
     <AnimatePresence>
-      {task && (
+      {open && (
         <motion.div
           className="modal-backdrop"
           initial={{ opacity: 0 }}
@@ -26,16 +29,14 @@ export default function ConfirmDialog({ task, onCancel, onConfirm }: ConfirmDial
             exit={{ opacity: 0, scale: 0.92, y: 10 }}
             transition={{ type: 'spring', stiffness: 380, damping: 28 }}
           >
-            <h3>Remove this note?</h3>
-            <p>
-              "<strong>{task.title}</strong>" will be pulled off the board for good.
-            </p>
+            <h3>{title}</h3>
+            <p>{message}</p>
             <div className="modal-actions">
               <button type="button" className="btn btn-ghost" onClick={onCancel}>
-                Keep it
+                {cancelText}
               </button>
               <button type="button" className="btn btn-danger" onClick={onConfirm}>
-                Delete
+                {confirmText}
               </button>
             </div>
           </motion.div>

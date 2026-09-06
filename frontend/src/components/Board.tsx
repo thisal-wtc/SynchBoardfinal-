@@ -68,6 +68,13 @@ export default function Board() {
   const [isCalendarView, setIsCalendarView] = useState(false);
   const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer'>('editor'); // default editor for personal
   const [columns, setColumns] = useState<any[]>([]);
+  const [pendingDeleteColumn, setPendingDeleteColumn] = useState<string | null>(null);
+  
+  // Column Modal State
+  const [columnModalOpen, setColumnModalOpen] = useState(false);
+  const [columnModalMode, setColumnModalMode] = useState<'add' | 'edit'>('add');
+  const [editingColumn, setEditingColumn] = useState<any>(null);
+  const [columnTitleInput, setColumnTitleInput] = useState('');
 
   // Fetch Room Role & Columns
   useEffect(() => {
@@ -355,6 +362,59 @@ export default function Board() {
     setModalOpen(false);
   }
 
+  const saveColumnsToBackend = (updatedColumns: any[]) => {
+    if (actualRoomId) {
+      fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${actualRoomId}/columns`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ columns: updatedColumns })
+      });
+    } else {
+      fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ personalColumns: updatedColumns })
+      });
+    }
+  };
+
+  const handleSaveColumn = () => {
+    if (!columnTitleInput.trim()) return;
+    
+    if (columnModalMode === 'add') {
+      const newCol = { 
+        id: columnTitleInput.toLowerCase().replace(/\s+/g, '-'), 
+        title: columnTitleInput, 
+        order: columns.length 
+      };
+      const updatedColumns = [...columns, newCol];
+      setColumns(updatedColumns);
+      saveColumnsToBackend(updatedColumns);
+      toast.success('Column added');
+    } else if (editingColumn) {
+      const updatedColumns = columns.map(c => 
+        c.id === editingColumn.id ? { ...c, title: columnTitleInput } : c
+      );
+      setColumns(updatedColumns);
+      saveColumnsToBackend(updatedColumns);
+      toast.success('Column updated');
+    }
+    
+    setColumnModalOpen(false);
+    setColumnTitleInput('');
+    setEditingColumn(null);
+  };
+
+  const handleConfirmDeleteColumn = () => {
+    if (pendingDeleteColumn) {
+      const updatedColumns = columns.filter(c => c.id !== pendingDeleteColumn);
+      setColumns(updatedColumns);
+      saveColumnsToBackend(updatedColumns);
+      toast('Column removed');
+      setPendingDeleteColumn(null);
+    }
+  };
+
   function handleConfirmDelete() {
     if (pendingDelete) {
       deleteTask(pendingDelete.id);
@@ -531,38 +591,13 @@ export default function Board() {
                       onEdit={openEditModal}
                       onRequestDelete={setPendingDelete}
                       onEditColumn={userRole !== 'viewer' ? (id, newTitle) => {
-                        const updatedColumns = columns.map(c => c.id === id ? { ...c, title: newTitle } : c);
-                        setColumns(updatedColumns);
-                        if (actualRoomId) {
-                          fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${actualRoomId}/columns`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                            body: JSON.stringify({ columns: updatedColumns })
-                          });
-                        } else {
-                          fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                            body: JSON.stringify({ personalColumns: updatedColumns })
-                          });
-                        }
+                        setEditingColumn(columns.find(c => c.id === id));
+                        setColumnTitleInput(newTitle);
+                        setColumnModalMode('edit');
+                        setColumnModalOpen(true);
                       } : undefined}
                       onDeleteColumn={userRole !== 'viewer' ? (id) => {
-                        const updatedColumns = columns.filter(c => c.id !== id);
-                        setColumns(updatedColumns);
-                        if (actualRoomId) {
-                          fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${actualRoomId}/columns`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                            body: JSON.stringify({ columns: updatedColumns })
-                          });
-                        } else {
-                          fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                            body: JSON.stringify({ personalColumns: updatedColumns })
-                          });
-                        }
+                        setPendingDeleteColumn(id);
                       } : undefined}
                     />
                   </div>
@@ -573,27 +608,9 @@ export default function Board() {
                   <div className="flex-shrink-0 w-80 pt-1">
                     <button
                       onClick={() => {
-                        const title = prompt('Enter column name:');
-                        if (title) {
-                          const newCol = { id: title.toLowerCase().replace(/\s+/g, '-'), title, order: columns.length };
-                          const updatedColumns = [...columns, newCol];
-                          setColumns(updatedColumns);
-                          
-                          // Save to backend
-                          if (actualRoomId) {
-                            fetch(`${import.meta.env.VITE_API_URL || ''}/api/rooms/${actualRoomId}/columns`, {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                              body: JSON.stringify({ columns: updatedColumns })
-                            });
-                          } else {
-                            fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/profile`, {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                              body: JSON.stringify({ personalColumns: updatedColumns })
-                            });
-                          }
-                        }
+                        setColumnModalMode('add');
+                        setColumnTitleInput('');
+                        setColumnModalOpen(true);
                       }}
                       className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-400 dark:hover:border-gray-600 transition-colors"
                     >
@@ -634,7 +651,64 @@ export default function Board() {
         onSubmit={handleModalSubmit}
       />
 
-      <ConfirmDialog task={pendingDelete} onCancel={() => setPendingDelete(null)} onConfirm={handleConfirmDelete} />
+      <ConfirmDialog 
+        open={!!pendingDelete}
+        title="Remove this note?"
+        message={<>"{<strong>{pendingDelete?.title}</strong>}" will be pulled off the board for good.</>}
+        onCancel={() => setPendingDelete(null)} 
+        onConfirm={handleConfirmDelete} 
+      />
+
+      <ConfirmDialog 
+        open={!!pendingDeleteColumn}
+        title="Delete this column?"
+        message="Are you sure you want to delete this column? Tasks inside will be lost unless you move them."
+        onCancel={() => setPendingDeleteColumn(null)} 
+        onConfirm={handleConfirmDeleteColumn} 
+      />
+
+      <AnimatePresence>
+        {columnModalOpen && (
+          <motion.div
+            className="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setColumnModalOpen(false)}
+          >
+            <motion.div
+              className="confirm-card max-w-sm"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.9, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 10 }}
+            >
+              <h3>{columnModalMode === 'add' ? 'Add Column' : 'Edit Column'}</h3>
+              <div className="mt-4">
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Column Name"
+                  className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 border-none rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 mb-4"
+                  value={columnTitleInput}
+                  onChange={(e) => setColumnTitleInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveColumn();
+                  }}
+                />
+              </div>
+              <div className="modal-actions mt-2">
+                <button type="button" className="btn btn-ghost" onClick={() => setColumnModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="button" className="btn btn-primary bg-indigo-600 text-white hover:bg-indigo-700" onClick={handleSaveColumn}>
+                  Save
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Live Cursors */}
       {Object.values(cursors).map((cursor, i) => (
