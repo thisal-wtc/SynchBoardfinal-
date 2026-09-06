@@ -127,7 +127,7 @@
    ========================================================= */
 
 .board-frame {
-  background: linear-gradient(180deg, #ffffff, #f6f7f9);
+  background: var(--board-frame-bg);
   border: 10px solid var(--frame);
   border-radius: 18px;
   box-shadow: 0 22px 45px rgba(35, 42, 54, 0.14), inset 0 0 0 2px rgba(255, 255, 255, 0.6);

@@ -11,6 +11,7 @@
   --ink-soft: #5b6472;
   --panel: rgba(255, 255, 255, 0.55);
   --panel-border: rgba(35, 42, 54, 0.08);
+  --board-frame-bg: linear-gradient(180deg, #ffffff, #f6f7f9);
 
   /* Brand accent — the pushpin red, reused for primary actions */
   --pin-red: #e63946;
@@ -43,6 +44,7 @@
   --ink-soft: #cbd5e1; /* slate-300 */
   --panel: rgba(15, 23, 42, 0.75); /* slate-900 with opacity */
   --panel-border: rgba(255, 255, 255, 0.1);
+  --board-frame-bg: linear-gradient(180deg, #1e293b, #0f172a);
 
   /* Note shadows need to be slightly darker in dark mode for contrast */
   --note-yellow-shadow: #c7a421;

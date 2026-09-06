@@ -31,10 +31,7 @@ export default function Column({ config, tasks, activeTask, onEdit, onRequestDel
             <span className="column-count mr-2">{tasks.length}</span>
             {onEditColumn && (
               <button 
-                onClick={() => {
-                  const newTitle = prompt('Rename column:', config.title);
-                  if (newTitle && newTitle !== config.title) onEditColumn(config.id, newTitle);
-                }}
+                onClick={() => onEditColumn(config.id, config.title)}
                 className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-500 transition-colors"
                 title="Rename Column"
               >
@@ -43,12 +40,8 @@ export default function Column({ config, tasks, activeTask, onEdit, onRequestDel
             )}
             {onDeleteColumn && (
               <button 
-                onClick={() => {
-                  if (confirm(`Are you sure you want to delete the "${config.title}" column? Tasks inside will be lost unless you move them.`)) {
-                    onDeleteColumn(config.id);
-                  }
-                }}
-                className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                onClick={() => onDeleteColumn(config.id)}
+                className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-400 hover:text-red-500 rounded transition-colors"
                 title="Delete Column"
               >
                 <Trash2 size={14} />
