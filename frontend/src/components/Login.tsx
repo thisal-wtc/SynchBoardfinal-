@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Pin as PinIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -10,6 +10,9 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = location.state?.from?.pathname || '/';
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,7 +40,7 @@ const Login: React.FC = () => {
 
       login(data.user, data.token);
       toast.success('Logged in successfully!');
-      navigate('/');
+      navigate(from, { replace: true });
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -90,7 +93,7 @@ const Login: React.FC = () => {
         
         <div className="auth-footer">
           Don't have an account?
-          <Link to="/register" className="auth-link">
+          <Link to="/register" state={{ from: location.state?.from }} className="auth-link">
             Sign up
           </Link>
         </div>

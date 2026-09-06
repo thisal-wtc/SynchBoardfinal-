@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Pin as PinIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -8,6 +8,7 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -34,7 +35,7 @@ const Register: React.FC = () => {
       }
 
       toast.success('Registration successful! Please login.');
-      navigate('/login');
+      navigate('/login', { state: { from: location.state?.from } });
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -87,7 +88,7 @@ const Register: React.FC = () => {
         
         <div className="auth-footer">
           Already have an account?
-          <Link to="/login" className="auth-link">
+          <Link to="/login" state={{ from: location.state?.from }} className="auth-link">
             Log in
           </Link>
         </div>

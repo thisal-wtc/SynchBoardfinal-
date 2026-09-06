@@ -30,6 +30,12 @@ const Dashboard: React.FC = () => {
       });
       if (response.ok) {
         setRooms(await response.json());
+      } else if (response.status === 401 || response.status === 400) {
+        const data = await response.json();
+        if (data.message === 'Invalid token.') {
+           logout();
+           toast.error('Session expired. Please log in again.');
+        }
       }
     } catch (error) {
       console.error('Failed to fetch rooms', error);

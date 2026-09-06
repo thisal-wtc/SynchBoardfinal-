@@ -7,7 +7,7 @@ import { Users, Loader2 } from 'lucide-react';
 const JoinRoom: React.FC = () => {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const [status, setStatus] = useState<'loading' | 'error' | 'success'>('loading');
   const [message, setMessage] = useState('');
 
@@ -31,6 +31,14 @@ const JoinRoom: React.FC = () => {
           toast.success('Joined room!');
           setStatus('success');
           navigate(`/room/${data.room._id}`);
+        } else if (response.status === 401 || response.status === 400) {
+          if (data.message === 'Invalid token.') {
+             logout();
+             toast.error('Session expired. Please log in again to join.');
+          } else {
+             setStatus('error');
+             setMessage(data.message || 'Failed to join room');
+          }
         } else if (data.roomId) {
           // Already a member
           toast.success('You are already in this room');
