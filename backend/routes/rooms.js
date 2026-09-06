@@ -2,7 +2,7 @@ import express from 'express';
 import Room from '../models/Room.js';
 import User from '../models/User.js';
 import Task from '../models/Task.js';
-import verifyToken from '../middleware/auth.js';
+import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
