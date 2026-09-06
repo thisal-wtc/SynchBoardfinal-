@@ -40,7 +40,7 @@ router.get('/', verifyToken, async (req, res) => {
 // CREATE a new task
 router.post('/', verifyToken, async (req, res) => {
   try {
-    const { title, description, color, status, dueDate, room } = req.body;
+    const { title, description, color, status, dueDate, room, subtasks } = req.body;
     
     if (room) {
       const role = await checkRole(room, req.user._id);
