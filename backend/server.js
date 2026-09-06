@@ -15,8 +15,11 @@ import jwt from 'jsonwebtoken';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env from backend directory (works both locally and on Vercel)
+// Load .env — try backend dir first, then root (for Vercel compatibility)
 dotenv.config({ path: path.join(__dirname, '.env') });
+if (!process.env.MONGODB_URI) {
+  dotenv.config({ path: path.join(__dirname, '..', '.env') });
+}
 
 const app = express();
 const httpServer = createServer(app);
@@ -26,6 +29,16 @@ const io = null;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Health check endpoint (for debugging)
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    mongoUri: process.env.MONGODB_URI ? 'SET' : 'NOT SET',
+    jwtSecret: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
+    dbState: ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState],
+  });
+});
 
 // MongoDB connection with caching for serverless
 let isConnected = false;
