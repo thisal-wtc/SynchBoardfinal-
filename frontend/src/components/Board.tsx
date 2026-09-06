@@ -11,10 +11,10 @@ import {
   type DropAnimation,
 } from '@dnd-kit/core';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Pin as PinIcon, Plus, AlertCircle, MapPin, Edit2, Trash2, LogOut, Search, Bell } from 'lucide-react';
+import { Plus, AlertCircle, MapPin, Edit2, Trash2, LogOut, Search, Bell, ArrowLeft } from 'lucide-react';
 import { Moon, Sun, MessageSquare, Calendar as CalendarIcon, Phone } from 'lucide-react';
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useTasks } from '../hooks/useTasks';
 import { useAuth } from '../context/AuthContext';
@@ -38,10 +38,11 @@ interface Activity {
 
 export default function Board() {
   const { id: roomId } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const isPersonal = !roomId || roomId === 'personal';
   const actualRoomId = isPersonal ? undefined : roomId;
 
-  const { logout, user, token } = useAuth();
+  const { user, token } = useAuth();
   const { socket, isConnected } = useSocket();
   const { theme, toggleTheme } = useTheme();
   const { tasks, setTasks, addTask, updateTask, deleteTask, moveTask } = useTasks(actualRoomId);
@@ -321,7 +322,7 @@ export default function Board() {
   async function handleModalSubmit(title: string, description: string, color: NoteColor, dueDate?: string | null) {
     if (modalMode === 'add') {
       await addTask(title, description, color, dueDate);
-      toast.success('Task pinned to the board', { icon: <PinIcon size={18} color="#3B82F6" /> });
+      toast.success('Task pinned to the board');
       addActivity(`Created task "${title}"`);
     } else if (editingTask) {
       await updateTask(editingTask.id, { title, description, color, dueDate });
@@ -361,11 +362,16 @@ export default function Board() {
     <div className="board-page">
       <header className="board-header">
         <div className="board-brand">
-          <span className="brand-pin">
-            <PinIcon size={20} strokeWidth={2.4} />
-          </span>
-          <div>
+          <button 
+            className="btn-back" 
+            onClick={() => navigate('/dashboard')}
+            title="Back to Dashboard"
+          >
+            <ArrowLeft size={20} strokeWidth={2.5} />
+          </button>
+          <div className="brand-title">
             <h1>SynchBoard</h1>
+            <span className="board-badge">{actualRoomId ? 'Team Board' : 'Personal Board'}</span>
           </div>
         </div>
         
@@ -475,18 +481,7 @@ export default function Board() {
             </motion.button>
           )}
           
-          <motion.button
-            type="button"
-            onClick={logout}
-            className="btn btn-ghost"
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--pin-red)', borderColor: 'rgba(230,57,70,0.3)' }}
-            title="Log out"
-            whileHover={{ scale: 1.04, backgroundColor: 'rgba(230,57,70,0.05)' }}
-            whileTap={{ scale: 0.96 }}
-          >
-            <LogOut size={18} strokeWidth={2.6} />
-            <span>Logout</span>
-          </motion.button>
+
         </div>
       </header>
 
