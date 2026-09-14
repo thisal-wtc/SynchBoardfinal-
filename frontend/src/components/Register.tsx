@@ -25,7 +25,7 @@ const Register: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/auth/google`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: credentialResponse.credential }),
@@ -58,7 +58,7 @@ const Register: React.FC = () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/auth/register`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
